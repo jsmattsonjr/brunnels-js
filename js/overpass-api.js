@@ -49,44 +49,57 @@ class OverpassAPI {
     }
     
     /**
-     * Build Overpass QL query for bridges and tunnels
+     * Build Overpass QL query for bridges and tunnels - matches Python implementation exactly
      */
     static buildOverpassQuery(bounds, options) {
         const { timeout, includeBicycleNo, includeWaterways, includeActiveRailways } = options;
-        const bbox = `${bounds.minLat},${bounds.minLon},${bounds.maxLat},${bounds.maxLon}`;
+        const south = bounds.minLat;
+        const west = bounds.minLon;
+        const north = bounds.maxLat;
+        const east = bounds.maxLon;
         
-        let bridgeFilters = '';
-        let tunnelFilters = '';
-        
-        // Base filters for cycling relevance
-        if (!includeBicycleNo) {
-            bridgeFilters += '["bicycle"!="no"]';
-            tunnelFilters += '["bicycle"!="no"]';
-        }
-        
+        // Build base filters exactly like Python
+        let baseFilters = '';
         if (!includeWaterways) {
-            bridgeFilters += '["waterway"!~"^(river|stream|canal|drain|ditch)$"]';
-            tunnelFilters += '["waterway"!~"^(river|stream|canal|drain|ditch)$"]';
+            baseFilters += '[!waterway]';
         }
+        if (!includeBicycleNo) {
+            baseFilters += '["bicycle"!="no"]';
+        }
+        
+        // Build railway exclusions exactly like Python
+        let bridgeRailwayExclusion = '';
+        let tunnelRailwayExclusion = '';
         
         if (!includeActiveRailways) {
-            const railwayTypes = 'rail|light_rail|subway|tram|narrow_gauge|funicular|monorail|miniature|preserved';
-            bridgeFilters += `["railway"!~"^(${railwayTypes})$"]`;
-            tunnelFilters += `["railway"!~"^(${railwayTypes})$"]`;
+            const activeRailwayTypes = 'rail|light_rail|subway|tram|narrow_gauge|funicular|monorail|miniature|preserved';
+            const railwayExclusion = `["railway"~"^(${activeRailwayTypes})$"]${baseFilters}(if:!is_closed());`;
+            bridgeRailwayExclusion = `\n  - way[bridge]${railwayExclusion}`;
+            tunnelRailwayExclusion = `\n  - way[tunnel]${railwayExclusion}`;
         }
         
-        return `
-[out:json][timeout:${timeout}];
+        // Build complete query exactly like Python
+        return `[out:json][timeout:${timeout}][bbox:${south},${west},${north},${east}];
 (
-  way["bridge"~"^(yes|viaduct|boardwalk|cantilever|covered|low_water_crossing|movable|trestle|suspension|cable_stayed|arch|beam|truss)$"]${bridgeFilters}(${bbox});
-  way["tunnel"~"^(yes|building_passage|culvert|flooded|passage|underpass)$"]${tunnelFilters}(${bbox});
+  (
+    way[bridge]${baseFilters}(if:!is_closed());${bridgeRailwayExclusion}
+  );
+  way[bridge][highway=cycleway](if:!is_closed());
 );
-out geom;
-        `.trim();
+out count;
+out geom qt;
+(
+  (
+    way[tunnel]${baseFilters}(if:!is_closed());${tunnelRailwayExclusion}
+  );
+  way[tunnel][highway=cycleway](if:!is_closed());
+);
+out count;
+out geom qt;`;
     }
     
     /**
-     * Process Overpass API response data
+     * Process Overpass API response data - matches Python implementation exactly
      */
     static processOverpassData(data) {
         const brunnels = {
@@ -98,26 +111,30 @@ out geom;
             return brunnels;
         }
         
+        let currentType = null;
+        
         data.elements.forEach(element => {
-            if (element.type !== 'way' || !element.geometry) {
-                return;
-            }
-            
-            const brunnel = {
-                id: element.id,
-                tags: element.tags || {},
-                geometry: element.geometry.map(node => ({
-                    lat: node.lat,
-                    lon: node.lon
-                })),
-                type: this.determineBrunnelType(element.tags),
-                name: this.extractName(element.tags)
-            };
-            
-            if (brunnel.type === 'bridge') {
-                brunnels.bridges.push(brunnel);
-            } else if (brunnel.type === 'tunnel') {
-                brunnels.tunnels.push(brunnel);
+            if (element.type === 'count') {
+                // First count is bridges, second count is tunnels
+                currentType = currentType === 'bridges' ? 'tunnels' : 'bridges';
+                console.log(`Overpass query found ${element.tags.total} ${currentType}`);
+            } else if (element.type === 'way' && element.geometry) {
+                const brunnel = {
+                    id: element.id,
+                    tags: element.tags || {},
+                    geometry: element.geometry.map(node => ({
+                        lat: node.lat,
+                        lon: node.lon
+                    })),
+                    type: currentType === 'bridges' ? 'bridge' : 'tunnel',
+                    name: this.extractName(element.tags)
+                };
+                
+                if (currentType === 'bridges') {
+                    brunnels.bridges.push(brunnel);
+                } else if (currentType === 'tunnels') {
+                    brunnels.tunnels.push(brunnel);
+                }
             }
         });
         
