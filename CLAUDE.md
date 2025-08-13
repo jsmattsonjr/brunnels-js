@@ -115,3 +115,7 @@ User-configurable parameters:
 - **Bearing Tolerance** (default 20°) - Alignment tolerance
 
 The codebase maintains the same filtering algorithms and parameters as the Python version to ensure consistent results.
+
+## Git Commit Messages
+
+When creating commits, include Jim Mattson <jsmattsonjr@gmail.com> as co-author in the commit message.
