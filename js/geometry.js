@@ -1,27 +1,9 @@
 /**
  * Geometric utility functions using established libraries
  * - Turf.js for geospatial operations (equivalent to Shapely)
- * - proj4js for coordinate projections (equivalent to pyproj)
  * - Lodash for binary search (equivalent to bisect)
  */
 class GeometryUtils {
-    /**
-     * Create a custom transverse mercator projection centered on the given bounding box
-     * @param {Object} bounds - Bounding box {minLat, maxLat, minLon, maxLon}
-     * @returns {Function} proj4 projection function
-     */
-    static createTransverseMercatorProjection(bounds) {
-        // Calculate center of bounding box for projection center (matches Python)
-        const centerLat = (bounds.minLat + bounds.maxLat) / 2.0;
-        const centerLon = (bounds.minLon + bounds.maxLon) / 2.0;
-        
-        // Create custom transverse mercator projection string (matches Python exactly)
-        const projString = `+proj=tmerc +lat_0=${centerLat} +lon_0=${centerLon} +k=1 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs`;
-        
-        // Return projection definition for use with proj4
-        return projString;
-    }
-
     /**
      * Create a buffered geometry around a route using Turf
      * @param {Array} routeCoords - Route coordinates [{lat, lon}, ...]

@@ -33,7 +33,7 @@ This port uses modern JavaScript libraries equivalent to the Python dependencies
 - **Geospatial Operations**: `@turf/turf` (equivalent to `shapely`)
 - **Map Visualization**: `leaflet` (equivalent to `folium`) 
 - **Binary Search**: `lodash` (equivalent to Python's `bisect`)
-- **Projections**: `proj4js` (equivalent to `pyproj`)
+- **Projections**: Handled internally by Turf.js
 - **HTTP Requests**: `fetch` (equivalent to `requests`)
 
 ## Options
