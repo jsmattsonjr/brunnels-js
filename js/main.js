@@ -99,7 +99,15 @@ class BrunnelsApp {
      */
     async parseGPXFile(file) {
         const text = await file.text();
-        const gpx = new gpxParser();
+        // Try different constructor names for gpxparser library
+        let gpx;
+        if (typeof gpxParser !== 'undefined') {
+            gpx = new gpxParser();
+        } else if (typeof GPXParser !== 'undefined') {
+            gpx = new GPXParser();
+        } else {
+            throw new Error('GPX parser library not found');
+        }
         gpx.parse(text);
         
         if (gpx.tracks.length === 0) {

@@ -234,7 +234,15 @@ class BaseTest {
     }
     
     async parseGPXContent(gpxContent) {
-        const gpx = new gpxParser();
+        // Try different constructor names for gpxparser library
+        let gpx;
+        if (typeof gpxParser !== 'undefined') {
+            gpx = new gpxParser();
+        } else if (typeof GPXParser !== 'undefined') {
+            gpx = new GPXParser();
+        } else {
+            throw new Error('GPX parser library not found. Available globals: ' + Object.keys(window).filter(k => k.toLowerCase().includes('gpx')).join(', '));
+        }
         gpx.parse(gpxContent);
         
         if (gpx.tracks.length === 0) {
