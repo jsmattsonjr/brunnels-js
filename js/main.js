@@ -117,14 +117,12 @@ class BrunnelsApp {
         // Extract coordinates from first track
         const coordinates = [];
         for (const track of gpx.tracks) {
-            for (const segment of track.points) {
-                for (const point of segment) {
-                    coordinates.push({
-                        lat: point.lat,
-                        lon: point.lon,
-                        elevation: point.ele || 0
-                    });
-                }
+            for (const point of track.points) {
+                coordinates.push({
+                    lat: point.lat,
+                    lon: point.lon,
+                    elevation: point.ele || 0
+                });
             }
         }
         
