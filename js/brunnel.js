@@ -48,12 +48,17 @@ class Brunnel {
     }
     
     /**
-     * Check if brunnel intersects with route buffer
-     * @param {Object} routeBuffer - Buffered route geometry
-     * @returns {boolean} True if intersects
+     * Check if brunnel is contained by route buffer - matches Python is_contained_by()
+     * @param {Object} routeBuffer - Buffered route geometry  
+     * @returns {boolean} True if contained
      */
-    intersectsRoute(routeBuffer) {
-        return GeometryUtils.brunnelIntersectsRoute(this.geometry, routeBuffer);
+    isContainedBy(routeBuffer) {
+        const isContained = GeometryUtils.brunnelIsContainedBy(this.geometry, routeBuffer);
+        // Debug the problematic bridge
+        if (!isContained && this.type === 'bridge') {
+            console.log('Bridge excluded from containment:', this.id, this.name);
+        }
+        return isContained;
     }
     
     /**
@@ -67,6 +72,11 @@ class Brunnel {
             routeCoords, 
             bufferMeters
         );
+        
+        // Debug bridges that fail to get route spans
+        if (!this.routeSpan && this.type === 'bridge') {
+            console.log('Bridge failed to get route span:', this.id, this.name);
+        }
     }
     
     /**
@@ -167,11 +177,11 @@ class BrunnelAnalysis {
      */
     static filterContained(brunnels, routeBuffer) {
         return brunnels.filter(brunnel => {
-            const intersects = brunnel.intersectsRoute(routeBuffer);
-            if (!intersects) {
+            const isContained = brunnel.isContainedBy(routeBuffer);
+            if (!isContained) {
                 brunnel.exclusionReason = 'outlier';
             }
-            return intersects;
+            return isContained;
         });
     }
     
@@ -267,6 +277,16 @@ class BrunnelAnalysis {
     static getSummaryStats(brunnels) {
         const bridges = brunnels.filter(b => b.type === 'bridge');
         const tunnels = brunnels.filter(b => b.type === 'tunnel');
+        
+        // Debug logging
+        console.log('Stats calculation:', {
+            totalBrunnels: brunnels.length,
+            bridges: bridges.length,
+            tunnels: tunnels.length,
+            bridgeTypes: bridges.map(b => b.type),
+            tunnelTypes: tunnels.map(b => b.type),
+            allTypes: brunnels.map(b => b.type)
+        });
         
         return {
             totalBrunnels: brunnels.length,

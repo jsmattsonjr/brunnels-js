@@ -146,6 +146,9 @@ class BrunnelsApp {
             },
             async findBrunnels(options) {
                 const expandedBounds = GeometryUtils.expandBounds(bounds, options.queryBuffer || 10);
+                console.log('Original bounds:', bounds);
+                console.log('Expanded bounds for Overpass query:', expandedBounds);
+                console.log('Query buffer:', options.queryBuffer || 10, 'meters');
                 return await OverpassAPI.queryBrunnels(expandedBounds, options);
             }
         };

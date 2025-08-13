@@ -1,9 +1,27 @@
 /**
  * Geometric utility functions using established libraries
  * - Turf.js for geospatial operations (equivalent to Shapely)
+ * - proj4js for coordinate projections (equivalent to pyproj)
  * - Lodash for binary search (equivalent to bisect)
  */
 class GeometryUtils {
+    /**
+     * Create a custom transverse mercator projection centered on the given bounding box
+     * @param {Object} bounds - Bounding box {minLat, maxLat, minLon, maxLon}
+     * @returns {Function} proj4 projection function
+     */
+    static createTransverseMercatorProjection(bounds) {
+        // Calculate center of bounding box for projection center (matches Python)
+        const centerLat = (bounds.minLat + bounds.maxLat) / 2.0;
+        const centerLon = (bounds.minLon + bounds.maxLon) / 2.0;
+        
+        // Create custom transverse mercator projection string (matches Python exactly)
+        const projString = `+proj=tmerc +lat_0=${centerLat} +lon_0=${centerLon} +k=1 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs`;
+        
+        // Return projection definition for use with proj4
+        return projString;
+    }
+
     /**
      * Create a buffered geometry around a route using Turf
      * @param {Array} routeCoords - Route coordinates [{lat, lon}, ...]
@@ -74,7 +92,7 @@ class GeometryUtils {
      * @param {Object} routeBuffer - Buffered route polygon from createRouteBuffer
      * @returns {boolean} True if brunnel is completely contained (matches Python shapely.contains)
      */
-    static brunnelIntersectsRoute(brunnelCoords, routeBuffer) {
+    static brunnelIsContainedBy(brunnelCoords, routeBuffer) {
         // Create brunnel LineString geometry
         const brunnelLine = turf.lineString(brunnelCoords.map(coord => [coord.lon, coord.lat]));
         
@@ -84,44 +102,42 @@ class GeometryUtils {
     }
     
     /**
-     * Calculate route spans where brunnel intersects the route using Turf
+     * Calculate route spans where brunnel projects onto the route using Turf.js (WGS84)
      * @param {Array} brunnelCoords - Brunnel coordinates
      * @param {Array} routeCoords - Route coordinates
-     * @param {number} bufferMeters - Buffer distance in meters
+     * @param {number} bufferMeters - Buffer distance in meters (not used in route span calculation)
      * @returns {Object|null} Route span {startDistance, endDistance} or null
      */
     static calculateRouteSpan(brunnelCoords, routeCoords, bufferMeters) {
-        const routeLine = turf.lineString(
-            routeCoords.map(coord => [coord.lon, coord.lat])
-        );
-        const routeLength = turf.length(routeLine, { units: 'meters' });
-        
-        let minDistance = Infinity;
-        let maxDistance = 0;
-        let hasIntersection = false;
-        
-        // Project each brunnel point onto the route using Turf
-        for (const coord of brunnelCoords) {
-            const point = turf.point([coord.lon, coord.lat]);
-            const nearest = turf.nearestPointOnLine(routeLine, point);
-            const distanceToRoute = turf.distance(point, nearest, { units: 'meters' });
+        try {
+            // Create route line using WGS84 coordinates - let Turf handle projections internally
+            const routeLine = turf.lineString(routeCoords.map(coord => [coord.lon, coord.lat]));
             
-            if (distanceToRoute <= bufferMeters) {
-                hasIntersection = true;
-                const distanceAlongRoute = nearest.properties.location * routeLength;
+            let minDistance = Infinity;
+            let maxDistance = -Infinity;
+            
+            // Project each brunnel point onto the route using WGS84 coordinates
+            for (const coord of brunnelCoords) {
+                const point = turf.point([coord.lon, coord.lat]);
+                const nearest = turf.nearestPointOnLine(routeLine, point);
+                
+                // Distance along route where this point projects (Turf handles the geodesic calculations)
+                const distanceAlongRoute = nearest.properties.location;
                 minDistance = Math.min(minDistance, distanceAlongRoute);
                 maxDistance = Math.max(maxDistance, distanceAlongRoute);
             }
-        }
-        
-        if (!hasIntersection) {
+            
+            const result = {
+                startDistance: minDistance,
+                endDistance: maxDistance
+            };
+            
+            return result;
+            
+        } catch (error) {
+            console.error('Error in calculateRouteSpan:', error);
             return null;
         }
-        
-        return {
-            startDistance: minDistance,
-            endDistance: maxDistance
-        };
     }
     
     /**
