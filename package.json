@@ -1,0 +1,15 @@
+{
+  "name": "brunnels-js",
+  "version": "1.0.0",
+  "description": "Web-based GPX route analysis tool that identifies bridges and tunnels along your route",
+  "main": "index.html",
+  "scripts": {
+    "start": "python3 -m http.server 8000",
+    "dev": "python3 -m http.server 8000"
+  },
+  "keywords": ["gpx", "bridges", "tunnels", "cycling", "route", "openstreetmap"],
+  "author": "JavaScript port of Python brunnels tool",
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {}
+}

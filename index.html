@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brunnels JS - GPX Route Bridge & Tunnel Analysis</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🌉 Brunnels JS</h1>
+            <p>Analyze bridges and tunnels along your GPX route</p>
+        </header>
+
+        <main>
+            <div class="upload-section">
+                <div class="file-input-container">
+                    <input type="file" id="gpxFile" accept=".gpx" />
+                    <label for="gpxFile" class="file-input-label">
+                        📁 Choose GPX File
+                    </label>
+                </div>
+                
+                <div class="options">
+                    <div class="option-group">
+                        <label for="queryBuffer">Search Buffer (meters):</label>
+                        <input type="number" id="queryBuffer" value="10" min="1" max="1000" />
+                    </div>
+                    
+                    <div class="option-group">
+                        <label for="routeBuffer">Route Buffer (meters):</label>
+                        <input type="number" id="routeBuffer" value="3" min="1" max="100" />
+                    </div>
+                    
+                    <div class="option-group">
+                        <label for="bearingTolerance">Bearing Tolerance (degrees):</label>
+                        <input type="number" id="bearingTolerance" value="20" min="0" max="90" />
+                    </div>
+                </div>
+
+                <button id="analyzeBtn" disabled>Analyze Route</button>
+            </div>
+
+            <div id="loading" class="loading hidden">
+                <div class="spinner"></div>
+                <p>Analyzing route and finding brunnels...</p>
+            </div>
+
+            <div id="results" class="results hidden">
+                <div class="summary">
+                    <h3>Analysis Results</h3>
+                    <div id="summaryStats"></div>
+                </div>
+
+                <div class="map-container">
+                    <div id="map"></div>
+                </div>
+
+                <div class="brunnel-list">
+                    <h3>Brunnels Found</h3>
+                    <div id="brunnelList"></div>
+                </div>
+            </div>
+
+            <div id="error" class="error hidden">
+                <h3>Error</h3>
+                <p id="errorMessage"></p>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/gpxparser@3.0.8/gpxparser.js"></script>
+    <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
+    <script src="https://unpkg.com/lodash@4.17.21/lodash.min.js"></script>
+    <script src="https://unpkg.com/proj4@2.9.2/dist/proj4.js"></script>
+    <script src="js/overpass-api.js"></script>
+    <script src="js/geometry.js"></script>
+    <script src="js/brunnel.js"></script>
+    <script src="js/map-visualization.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
