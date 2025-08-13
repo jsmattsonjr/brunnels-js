@@ -69,16 +69,18 @@ class GeometryUtils {
     }
     
     /**
-     * Check if brunnel intersects with buffered route using Turf
+     * Check if brunnel is completely contained within buffered route using Turf
      * @param {Array} brunnelCoords - Brunnel coordinates
      * @param {Object} routeBuffer - Buffered route polygon from createRouteBuffer
-     * @returns {boolean} True if intersection exists
+     * @returns {boolean} True if brunnel is completely contained (matches Python shapely.contains)
      */
     static brunnelIntersectsRoute(brunnelCoords, routeBuffer) {
-        return brunnelCoords.some(coord => {
-            const point = turf.point([coord.lon, coord.lat]);
-            return turf.booleanPointInPolygon(point, routeBuffer);
-        });
+        // Create brunnel LineString geometry
+        const brunnelLine = turf.lineString(brunnelCoords.map(coord => [coord.lon, coord.lat]));
+        
+        // Use turf.booleanContains to match Python's shapely.contains()
+        // Returns true if routeBuffer completely contains the brunnel
+        return turf.booleanContains(routeBuffer, brunnelLine);
     }
     
     /**
