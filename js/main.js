@@ -14,21 +14,19 @@ class BrunnelsApp {
      */
     initializeEventListeners() {
         const gpxFileInput = document.getElementById('gpxFile');
-        const analyzeBtn = document.getElementById('analyzeBtn');
+        const errorBackBtn = document.getElementById('errorBackBtn');
         
+        // File selection automatically starts analysis
         gpxFileInput.addEventListener('change', (event) => {
             const file = event.target.files[0];
             if (file) {
-                analyzeBtn.disabled = false;
-                analyzeBtn.textContent = 'Analyze Route';
-            } else {
-                analyzeBtn.disabled = true;
-                analyzeBtn.textContent = 'Choose GPX File';
+                this.analyzeRoute();
             }
         });
         
-        analyzeBtn.addEventListener('click', () => {
-            this.analyzeRoute();
+        // Error back button
+        errorBackBtn.addEventListener('click', () => {
+            this.showUploadScreen();
         });
     }
     
@@ -37,9 +35,6 @@ class BrunnelsApp {
      */
     async analyzeRoute() {
         try {
-            this.showLoading(true);
-            this.hideError();
-            this.hideResults();
             
             // Get file and options
             const gpxFile = document.getElementById('gpxFile').files[0];
@@ -50,6 +45,7 @@ class BrunnelsApp {
             const options = this.getAnalysisOptions();
             
             // Parse GPX file
+            this.showLoading();
             this.updateLoadingMessage('Parsing GPX file...');
             this.route = await this.parseGPXFile(gpxFile);
             
@@ -61,7 +57,7 @@ class BrunnelsApp {
             this.brunnels = Brunnel.fromOverpassData(overpassData);
             
             if (this.brunnels.length === 0) {
-                this.showResults();
+                this.showResultsScreen();
                 this.updateSummary({ 
                     totalBrunnels: 0, 
                     totalBridges: 0, 
@@ -81,7 +77,7 @@ class BrunnelsApp {
             await this.applyFiltering(options);
             
             // Show results
-            this.showResults();
+            this.showResultsScreen();
             this.updateSummary(BrunnelAnalysis.getSummaryStats(this.brunnels));
             this.updateBrunnelList();
             this.updateMap();
@@ -90,7 +86,7 @@ class BrunnelsApp {
             console.error('Analysis error:', error);
             this.showError(error.message);
         } finally {
-            this.showLoading(false);
+            this.hideLoading();
         }
     }
     
@@ -196,8 +192,8 @@ class BrunnelsApp {
     initializeMap() {
         if (!this.mapVisualization) {
             this.mapVisualization = new MapVisualization('map');
-            this.mapVisualization.initializeMap(this.route.bounds);
         }
+        this.mapVisualization.initializeMap(this.route.bounds);
     }
     
     /**
@@ -279,35 +275,47 @@ class BrunnelsApp {
     }
     
     /**
-     * Show/hide loading state
+     * Show upload screen
      */
-    showLoading(show) {
-        const loadingDiv = document.getElementById('loading');
-        loadingDiv.classList.toggle('hidden', !show);
+    showUploadScreen() {
+        document.getElementById('uploadScreen').classList.remove('hidden');
+        document.getElementById('resultsScreen').classList.add('hidden');
+        document.getElementById('loading').classList.add('hidden');
+        document.getElementById('error').classList.add('hidden');
+    }
+    
+    /**
+     * Show results screen
+     */
+    showResultsScreen() {
+        document.getElementById('uploadScreen').classList.add('hidden');
+        document.getElementById('resultsScreen').classList.remove('hidden');
+        document.getElementById('loading').classList.add('hidden');
+        document.getElementById('error').classList.add('hidden');
+    }
+    
+    /**
+     * Show loading overlay
+     */
+    showLoading() {
+        document.getElementById('loading').classList.remove('hidden');
+    }
+    
+    /**
+     * Hide loading overlay
+     */
+    hideLoading() {
+        document.getElementById('loading').classList.add('hidden');
     }
     
     /**
      * Update loading message
      */
     updateLoadingMessage(message) {
-        const loadingDiv = document.getElementById('loading');
-        const messageP = loadingDiv.querySelector('p');
+        const messageP = document.getElementById('loadingMessage');
         if (messageP) {
             messageP.textContent = message;
         }
-    }
-    
-    /**
-     * Show/hide results
-     */
-    showResults() {
-        const resultsDiv = document.getElementById('results');
-        resultsDiv.classList.remove('hidden');
-    }
-    
-    hideResults() {
-        const resultsDiv = document.getElementById('results');
-        resultsDiv.classList.add('hidden');
     }
     
     /**
@@ -318,14 +326,6 @@ class BrunnelsApp {
         const messageP = document.getElementById('errorMessage');
         messageP.textContent = message;
         errorDiv.classList.remove('hidden');
-    }
-    
-    /**
-     * Hide error message
-     */
-    hideError() {
-        const errorDiv = document.getElementById('error');
-        errorDiv.classList.add('hidden');
     }
     
     /**

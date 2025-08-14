@@ -8,67 +8,79 @@
     <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>🌉 Brunnels JS</h1>
-            <p>Analyze bridges and tunnels along your GPX route</p>
-        </header>
-
-        <main>
-            <div class="upload-section">
-                <div class="file-input-container">
-                    <input type="file" id="gpxFile" accept=".gpx" />
-                    <label for="gpxFile" class="file-input-label">
-                        📁 Choose GPX File
-                    </label>
+    <!-- Initial upload screen -->
+    <div id="uploadScreen" class="upload-screen">
+        <div class="upload-content">
+            <h1>Analyze a route</h1>
+            
+            <div class="file-upload-area">
+                <input type="file" id="gpxFile" accept=".gpx" style="display: none;" />
+                <label for="gpxFile" class="file-upload-button">
+                    Click here to upload your route file
+                    <span class="file-types">Only .gpx accepted</span>
+                </label>
+            </div>
+            
+            <!-- Hidden options for advanced users -->
+            <div class="advanced-options hidden">
+                <div class="option-group">
+                    <label for="queryBuffer">Search Buffer (meters):</label>
+                    <input type="number" id="queryBuffer" value="10" min="1" max="1000" />
                 </div>
                 
-                <div class="options">
-                    <div class="option-group">
-                        <label for="queryBuffer">Search Buffer (meters):</label>
-                        <input type="number" id="queryBuffer" value="10" min="1" max="1000" />
+                <div class="option-group">
+                    <label for="routeBuffer">Route Buffer (meters):</label>
+                    <input type="number" id="routeBuffer" value="3" min="1" max="100" />
+                </div>
+                
+                <div class="option-group">
+                    <label for="bearingTolerance">Bearing Tolerance (degrees):</label>
+                    <input type="number" id="bearingTolerance" value="20" min="0" max="90" />
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Analysis results screen with split layout -->
+    <div id="resultsScreen" class="results-screen hidden">
+        <div class="split-container">
+            <!-- Left pane: Map -->
+            <div class="map-pane">
+                <div id="map"></div>
+            </div>
+            
+            <!-- Right pane: Brunnel list and stats -->
+            <div class="sidebar-pane">
+                <div class="sidebar-content">
+                    <div class="summary-section">
+                        <h3>Analysis Results</h3>
+                        <div id="summaryStats"></div>
                     </div>
                     
-                    <div class="option-group">
-                        <label for="routeBuffer">Route Buffer (meters):</label>
-                        <input type="number" id="routeBuffer" value="3" min="1" max="100" />
-                    </div>
-                    
-                    <div class="option-group">
-                        <label for="bearingTolerance">Bearing Tolerance (degrees):</label>
-                        <input type="number" id="bearingTolerance" value="20" min="0" max="90" />
+                    <div class="brunnel-list-section">
+                        <h3>Brunnels Found</h3>
+                        <div id="brunnelList"></div>
                     </div>
                 </div>
-
-                <button id="analyzeBtn" disabled>Analyze Route</button>
             </div>
+        </div>
+    </div>
 
-            <div id="loading" class="loading hidden">
-                <div class="spinner"></div>
-                <p>Analyzing route and finding brunnels...</p>
-            </div>
+    <!-- Loading overlay -->
+    <div id="loading" class="loading-overlay hidden">
+        <div class="loading-content">
+            <div class="spinner"></div>
+            <p id="loadingMessage">Analyzing route and finding brunnels...</p>
+        </div>
+    </div>
 
-            <div id="results" class="results hidden">
-                <div class="summary">
-                    <h3>Analysis Results</h3>
-                    <div id="summaryStats"></div>
-                </div>
-
-                <div class="map-container">
-                    <div id="map"></div>
-                </div>
-
-                <div class="brunnel-list">
-                    <h3>Brunnels Found</h3>
-                    <div id="brunnelList"></div>
-                </div>
-            </div>
-
-            <div id="error" class="error hidden">
-                <h3>Error</h3>
-                <p id="errorMessage"></p>
-            </div>
-        </main>
+    <!-- Error overlay -->
+    <div id="error" class="error-overlay hidden">
+        <div class="error-content">
+            <h3>Error</h3>
+            <p id="errorMessage"></p>
+            <button id="errorBackBtn">Back to Upload</button>
+        </div>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>

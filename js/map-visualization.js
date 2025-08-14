@@ -20,9 +20,30 @@ class MapVisualization {
             10
         );
         
-        // Add OpenStreetMap tiles
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors'
+        // Define base layers
+        const streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors',
+            name: 'Streets'
+        });
+        
+        const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            attribution: '© Esri, Maxar, Earthstar Geographics',
+            name: 'Satellite'
+        });
+        
+        // Add default layer (streets)
+        streetLayer.addTo(this.map);
+        
+        // Create base layer control
+        const baseLayers = {
+            'Streets': streetLayer,
+            'Satellite': satelliteLayer
+        };
+        
+        // Add layer control to map
+        L.control.layers(baseLayers, null, {
+            position: 'topright',
+            collapsed: false
         }).addTo(this.map);
         
         // Fit map to route bounds
