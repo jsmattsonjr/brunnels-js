@@ -314,6 +314,28 @@ class MapVisualization {
     }
     
     /**
+     * Set brunnel visibility on map
+     * @param {string} brunnelId - ID of the brunnel to show/hide
+     * @param {boolean} visible - Whether to show (true) or hide (false) the brunnel
+     */
+    setBrunnelVisibility(brunnelId, visible) {
+        const layer = this.brunnelLayerMap.get(brunnelId.toString());
+        if (layer) {
+            if (visible) {
+                // Add layer back to map if it's not already there
+                if (!this.map.hasLayer(layer)) {
+                    this.map.addLayer(layer);
+                }
+            } else {
+                // Remove layer from map
+                if (this.map.hasLayer(layer)) {
+                    this.map.removeLayer(layer);
+                }
+            }
+        }
+    }
+    
+    /**
      * Find brunnel by ID (helper method)
      * @param {string} brunnelId - ID to search for
      * @returns {Brunnel|null} Found brunnel or null

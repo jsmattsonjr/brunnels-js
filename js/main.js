@@ -244,24 +244,32 @@ class BrunnelsApp {
             
             return `
                 <div class="${cssClass}" data-brunnel-id="${brunnel.id}">
-                    <div class="brunnel-name"><strong>${brunnel.getDisplayName()}</strong></div>
-                    <div class="brunnel-distance">${brunnel.getRouteSpanString()}</div>
+                    <div class="brunnel-checkbox">
+                        <input type="checkbox" id="checkbox-${brunnel.id}" checked data-brunnel-id="${brunnel.id}">
+                        <label for="checkbox-${brunnel.id}" class="checkbox-label">✓</label>
+                    </div>
+                    <div class="brunnel-content">
+                        <div class="brunnel-name"><strong>${brunnel.getDisplayName()}</strong></div>
+                        <div class="brunnel-distance">${brunnel.getRouteSpanString()}</div>
+                    </div>
                 </div>
             `;
         }).join('');
         
         listDiv.innerHTML = listHTML;
         
-        // Add hover event listeners for map highlighting
-        this.addBrunnelHoverListeners();
+        // Add event listeners for checkboxes and hover
+        this.addBrunnelEventListeners();
     }
     
     /**
-     * Add hover event listeners to brunnel list items
+     * Add event listeners to brunnel list items (checkboxes and hover)
      */
-    addBrunnelHoverListeners() {
+    addBrunnelEventListeners() {
         const brunnelItems = document.querySelectorAll('.brunnel-item');
+        const checkboxes = document.querySelectorAll('.brunnel-checkbox input[type="checkbox"]');
         
+        // Add hover listeners to brunnel items
         brunnelItems.forEach(item => {
             const brunnelId = item.dataset.brunnelId;
             
@@ -277,6 +285,41 @@ class BrunnelsApp {
                 }
             });
         });
+        
+        // Add checkbox toggle listeners
+        checkboxes.forEach(checkbox => {
+            const brunnelId = checkbox.dataset.brunnelId;
+            
+            checkbox.addEventListener('change', () => {
+                this.toggleBrunnelVisibility(brunnelId, checkbox.checked);
+            });
+        });
+    }
+    
+    /**
+     * Toggle brunnel visibility on map
+     * @param {string} brunnelId - ID of the brunnel to toggle
+     * @param {boolean} visible - Whether to show (true) or hide (false) the brunnel
+     */
+    toggleBrunnelVisibility(brunnelId, visible) {
+        if (this.mapVisualization) {
+            this.mapVisualization.setBrunnelVisibility(brunnelId, visible);
+        }
+        
+        // Update checkbox label style
+        const checkbox = document.getElementById(`checkbox-${brunnelId}`);
+        const label = document.querySelector(`label[for="checkbox-${brunnelId}"]`);
+        if (checkbox && label) {
+            if (visible) {
+                label.style.color = '#2ecc71';
+                label.style.backgroundColor = '#fff';
+                label.textContent = '✓';
+            } else {
+                label.style.color = '#bdc3c7';
+                label.style.backgroundColor = '#ecf0f1';
+                label.textContent = '✗';
+            }
+        }
     }
     
     /**
