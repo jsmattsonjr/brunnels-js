@@ -226,9 +226,9 @@ class BrunnelsApp {
             return;
         }
         
-        // Sort brunnels by route distance - only show included ones
+        // Sort all brunnels by route distance - show both included and excluded
         const sortedBrunnels = [...this.brunnels]
-            .filter(b => b.routeSpan && b.isIncluded())
+            .filter(b => b.routeSpan)
             .sort((a, b) => a.routeSpan.startDistance - b.routeSpan.startDistance);
         
         if (sortedBrunnels.length === 0) {
@@ -240,13 +240,17 @@ class BrunnelsApp {
         headerElement.textContent = 'Brunnels Found';
         
         const listHTML = sortedBrunnels.map(brunnel => {
-            const cssClass = `brunnel-item ${brunnel.type} included`;
+            const isIncluded = brunnel.isIncluded();
+            const cssClass = `brunnel-item ${brunnel.type} ${isIncluded ? 'included' : 'excluded'}`;
+            const checkboxState = isIncluded ? 'checked' : '';
+            const checkboxLabel = isIncluded ? '✓' : '✗';
+            const labelClass = `checkbox-label${isIncluded ? '' : ' unchecked'}`;
             
             return `
                 <div class="${cssClass}" data-brunnel-id="${brunnel.id}">
                     <div class="brunnel-checkbox">
-                        <input type="checkbox" id="checkbox-${brunnel.id}" checked data-brunnel-id="${brunnel.id}">
-                        <label for="checkbox-${brunnel.id}" class="checkbox-label">✓</label>
+                        <input type="checkbox" id="checkbox-${brunnel.id}" ${checkboxState} data-brunnel-id="${brunnel.id}">
+                        <label for="checkbox-${brunnel.id}" class="${labelClass}">${checkboxLabel}</label>
                     </div>
                     <div class="brunnel-content">
                         <div class="brunnel-name"><strong>${brunnel.getDisplayName()}</strong></div>
@@ -306,17 +310,14 @@ class BrunnelsApp {
             this.mapVisualization.setBrunnelVisibility(brunnelId, visible);
         }
         
-        // Update checkbox label style
-        const checkbox = document.getElementById(`checkbox-${brunnelId}`);
+        // Update checkbox label style and content
         const label = document.querySelector(`label[for="checkbox-${brunnelId}"]`);
-        if (checkbox && label) {
+        if (label) {
             if (visible) {
-                label.style.color = '#2ecc71';
-                label.style.backgroundColor = '#fff';
+                label.classList.remove('unchecked');
                 label.textContent = '✓';
             } else {
-                label.style.color = '#bdc3c7';
-                label.style.backgroundColor = '#ecf0f1';
+                label.classList.add('unchecked');
                 label.textContent = '✗';
             }
         }

@@ -448,4 +448,8 @@ body {
     flex: 1;
 }
 
-/* Unchecked state styling handled by JavaScript */
+/* Unchecked checkbox label style */
+.checkbox-label.unchecked {
+    background: #ecf0f1;
+    color: #bdc3c7;
+}
