@@ -7,6 +7,7 @@ class MapVisualization {
         this.map = null;
         this.routeLayer = null;
         this.brunnelLayers = [];
+        this.brunnelLayerMap = new Map(); // Map brunnel IDs to their Leaflet layers
     }
     
     /**
@@ -126,6 +127,7 @@ class MapVisualization {
         // Clear existing brunnel layers
         this.brunnelLayers.forEach(layer => this.map.removeLayer(layer));
         this.brunnelLayers = [];
+        this.brunnelLayerMap.clear();
         
         // Filter to only show included brunnels
         const includedBrunnels = brunnels.filter(brunnel => brunnel.isIncluded());
@@ -160,7 +162,20 @@ class MapVisualization {
         const popupContent = this.createBrunnelPopup(brunnel);
         polyline.bindPopup(popupContent);
         
+        // Store brunnel reference on the layer for style reset
+        polyline._brunnel = brunnel;
+        
+        // Add hover listeners for reverse highlighting (map -> sidebar)
+        polyline.on('mouseover', () => {
+            this.highlightSidebarItem(brunnel.id, true);
+        });
+        
+        polyline.on('mouseout', () => {
+            this.highlightSidebarItem(brunnel.id, false);
+        });
+        
         this.brunnelLayers.push(polyline);
+        this.brunnelLayerMap.set(brunnel.id.toString(), polyline);
     }
     
     /**
@@ -262,5 +277,62 @@ class MapVisualization {
             [bounds.minLat, bounds.minLon],
             [bounds.maxLat, bounds.maxLon]
         ], { padding: [20, 20] });
+    }
+    
+    /**
+     * Highlight a brunnel on the map
+     * @param {string} brunnelId - ID of the brunnel to highlight
+     * @param {boolean} highlight - Whether to highlight (true) or unhighlight (false)
+     */
+    highlightBrunnel(brunnelId, highlight) {
+        const layer = this.brunnelLayerMap.get(brunnelId.toString());
+        if (layer) {
+            if (highlight) {
+                layer.setStyle({
+                    weight: 8,
+                    opacity: 1.0,
+                    color: '#ffff00' // Bright yellow for highlight
+                });
+                layer.bringToFront();
+            } else {
+                // Reset to original style
+                const brunnel = this.findBrunnelById(brunnelId);
+                if (brunnel) {
+                    layer.setStyle({
+                        color: brunnel.getMapColor(),
+                        weight: brunnel.getMapWeight(),
+                        opacity: brunnel.getMapOpacity()
+                    });
+                }
+            }
+        }
+    }
+    
+    /**
+     * Highlight a brunnel item in the sidebar
+     * @param {string} brunnelId - ID of the brunnel to highlight
+     * @param {boolean} highlight - Whether to highlight (true) or unhighlight (false)
+     */
+    highlightSidebarItem(brunnelId, highlight) {
+        const sidebarItem = document.querySelector(`[data-brunnel-id="${brunnelId}"]`);
+        if (sidebarItem) {
+            if (highlight) {
+                sidebarItem.style.background = '#f0f0f0';
+                sidebarItem.style.transform = 'translateX(2px)';
+            } else {
+                sidebarItem.style.background = '';
+                sidebarItem.style.transform = '';
+            }
+        }
+    }
+    
+    /**
+     * Find brunnel by ID (helper method)
+     * @param {string} brunnelId - ID to search for
+     * @returns {Brunnel|null} Found brunnel or null
+     */
+    findBrunnelById(brunnelId) {
+        const layer = this.brunnelLayerMap.get(brunnelId.toString());
+        return layer ? layer._brunnel : null;
     }
 }

@@ -222,7 +222,7 @@ class BrunnelsApp {
             const cssClass = `brunnel-item ${brunnel.type} included`;
             
             return `
-                <div class="${cssClass}">
+                <div class="${cssClass}" data-brunnel-id="${brunnel.id}">
                     <div class="brunnel-distance">${brunnel.getRouteSpanString()}</div>
                     <div class="brunnel-name">${brunnel.getDisplayName()}</div>
                 </div>
@@ -230,6 +230,32 @@ class BrunnelsApp {
         }).join('');
         
         listDiv.innerHTML = listHTML;
+        
+        // Add hover event listeners for map highlighting
+        this.addBrunnelHoverListeners();
+    }
+    
+    /**
+     * Add hover event listeners to brunnel list items
+     */
+    addBrunnelHoverListeners() {
+        const brunnelItems = document.querySelectorAll('.brunnel-item');
+        
+        brunnelItems.forEach(item => {
+            const brunnelId = item.dataset.brunnelId;
+            
+            item.addEventListener('mouseenter', () => {
+                if (this.mapVisualization) {
+                    this.mapVisualization.highlightBrunnel(brunnelId, true);
+                }
+            });
+            
+            item.addEventListener('mouseleave', () => {
+                if (this.mapVisualization) {
+                    this.mapVisualization.highlightBrunnel(brunnelId, false);
+                }
+            });
+        });
     }
     
     /**
