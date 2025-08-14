@@ -48,13 +48,17 @@ class BrunnelsApp {
             this.showLoading();
             this.updateLoadingMessage('Parsing GPX file...');
             this.route = await this.parseGPXFile(gpxFile);
+            console.log(`Loaded GPX route with ${this.route.coordinates.length} points`);
+            console.log(`Total route distance: ${(this.route.metadata.totalDistance / 1000).toFixed(2)} km`);
             
             // Find brunnels
             this.updateLoadingMessage('Querying OpenStreetMap for bridges and tunnels...');
             const overpassData = await this.route.findBrunnels(options);
+            console.log(`Overpass query found ${overpassData.bridges.length} bridges and ${overpassData.tunnels.length} tunnels`);
             
             // Create brunnel objects
             this.brunnels = Brunnel.fromOverpassData(overpassData);
+            console.log(`Found ${this.brunnels.length} total brunnels`);
             
             if (this.brunnels.length === 0) {
                 this.showResultsScreen();
@@ -68,6 +72,11 @@ class BrunnelsApp {
             // Apply filtering
             this.updateLoadingMessage('Analyzing route intersections...');
             await this.applyFiltering(options);
+            
+            const includedBrunnels = this.brunnels.filter(b => b.isIncluded());
+            const bridges = includedBrunnels.filter(b => b.type === 'bridge');
+            const tunnels = includedBrunnels.filter(b => b.type === 'tunnel');
+            console.log(`Found ${bridges.length}/${this.brunnels.filter(b => b.type === 'bridge').length} nearby bridges and ${tunnels.length}/${this.brunnels.filter(b => b.type === 'tunnel').length} nearby tunnels`);
             
             // Show results
             this.showResultsScreen();
@@ -133,7 +142,10 @@ class BrunnelsApp {
                 pointCount: coordinates.length
             },
             async findBrunnels(options) {
-                const expandedBounds = GeometryUtils.expandBounds(bounds, options.queryBuffer || 10);
+                const queryBuffer = options.queryBuffer || 10;
+                console.log('Base route bounding box:', bounds);
+                const expandedBounds = GeometryUtils.expandBounds(bounds, queryBuffer);
+                console.log(`Expanded bounds with ${queryBuffer}m buffer:`, expandedBounds);
                 return await OverpassAPI.queryBrunnels(expandedBounds, options);
             }
         };
@@ -206,9 +218,11 @@ class BrunnelsApp {
      */
     updateBrunnelList() {
         const listDiv = document.getElementById('brunnelList');
+        const headerElement = document.querySelector('.brunnel-list-section h3');
         
         if (this.brunnels.length === 0) {
-            listDiv.innerHTML = '<p>No brunnels found near your route.</p>';
+            headerElement.textContent = 'No Brunnels Found';
+            listDiv.innerHTML = '';
             return;
         }
         
@@ -216,6 +230,14 @@ class BrunnelsApp {
         const sortedBrunnels = [...this.brunnels]
             .filter(b => b.routeSpan && b.isIncluded())
             .sort((a, b) => a.routeSpan.startDistance - b.routeSpan.startDistance);
+        
+        if (sortedBrunnels.length === 0) {
+            headerElement.textContent = 'No Brunnels Found';
+            listDiv.innerHTML = '';
+            return;
+        }
+        
+        headerElement.textContent = 'Brunnels Found';
         
         const listHTML = sortedBrunnels.map(brunnel => {
             const cssClass = `brunnel-item ${brunnel.type} included`;
