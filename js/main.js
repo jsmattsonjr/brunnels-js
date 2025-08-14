@@ -171,7 +171,7 @@ class BrunnelsApp {
         this.routeBuffer = GeometryUtils.createRouteBuffer(this.route.coordinates, options.routeBuffer);
         
         // Filter contained brunnels
-        this.brunnels = BrunnelAnalysis.filterContained(this.brunnels, this.routeBuffer);
+        this.brunnels = BrunnelAnalysis.filterContained(this.brunnels, this.routeBuffer, this.route.coordinates);
         
         // Calculate route spans
         BrunnelAnalysis.calculateRouteSpans(this.brunnels, this.route.coordinates, options.routeBuffer);

@@ -96,7 +96,7 @@ class GeometryUtils {
     }
     
     /**
-     * Check if brunnel is completely within buffered route using Turf
+     * Check if brunnel is completely within buffered route using proper geometry testing
      * @param {Array} brunnelCoords - Brunnel coordinates
      * @param {Object} routeBuffer - Buffered route polygon from createRouteBuffer
      * @returns {boolean} True if brunnel is completely within (matches Python shapely.contains)
@@ -105,10 +105,79 @@ class GeometryUtils {
         // Create brunnel LineString geometry
         const brunnelLine = turf.lineString(brunnelCoords.map(coord => [coord.lon, coord.lat]));
         
-        // Use turf.booleanWithin to match Python's shapely.contains() behavior
-        // turf.booleanContains has issues with LineString vs Polygon containment
-        // turf.booleanWithin(brunnelLine, routeBuffer) correctly checks if line is within polygon
-        return turf.booleanWithin(brunnelLine, routeBuffer);
+        // Get the polygon boundary (exterior ring)
+        const polygonBoundary = turf.polygonToLine(routeBuffer);
+        
+        // Check if brunnel line intersects the polygon boundary
+        const intersections = turf.lineIntersect(brunnelLine, polygonBoundary);
+        
+        // If there are intersections with the boundary, the line is not fully contained
+        if (intersections.features.length > 0) {
+            return false;
+        }
+        
+        // If no boundary intersections, check if the first point is inside
+        const firstPoint = turf.point([brunnelCoords[0].lon, brunnelCoords[0].lat]);
+        return turf.booleanPointInPolygon(firstPoint, routeBuffer);
+    }
+    
+    /**
+     * Debug containment for a specific brunnel by checking distances to route
+     * @param {Array} brunnelCoords - Brunnel coordinates
+     * @param {Array} routeCoords - Route coordinates
+     * @param {string} brunnelName - Name for debugging
+     */
+    static debugBrunnelContainment(brunnelCoords, routeCoords, brunnelName) {
+        const routeLine = turf.lineString(routeCoords.map(coord => [coord.lon, coord.lat]));
+        const brunnelLine = turf.lineString(brunnelCoords.map(coord => [coord.lon, coord.lat]));
+        
+        console.log(`\n=== DEBUG CONTAINMENT: ${brunnelName} ===`);
+        
+        // 1) Project brunnel endpoints onto route
+        const brunnelStart = turf.point([brunnelCoords[0].lon, brunnelCoords[0].lat]);
+        const brunnelEnd = turf.point([brunnelCoords[brunnelCoords.length - 1].lon, brunnelCoords[brunnelCoords.length - 1].lat]);
+        
+        const startProjection = turf.nearestPointOnLine(routeLine, brunnelStart);
+        const endProjection = turf.nearestPointOnLine(routeLine, brunnelEnd);
+        
+        const startDistance = startProjection.properties.location * 1000; // Convert km to m
+        const endDistance = endProjection.properties.location * 1000;
+        
+        console.log(`Brunnel endpoints project to route at: ${startDistance.toFixed(1)}m - ${endDistance.toFixed(1)}m`);
+        
+        // 2) Sample route points between projections
+        const minDist = Math.min(startDistance, endDistance);
+        const maxDist = Math.max(startDistance, endDistance);
+        const routeLength = turf.length(routeLine, { units: 'meters' });
+        
+        console.log(`Checking route segment from ${minDist.toFixed(1)}m to ${maxDist.toFixed(1)}m`);
+        
+        // Sample every 50m or at least 5 points
+        const sampleInterval = Math.min(50, (maxDist - minDist) / 5);
+        const maxDistanceToRoute = [];
+        
+        for (let dist = minDist; dist <= maxDist; dist += sampleInterval) {
+            if (dist > routeLength) break;
+            
+            // 3) Get point on route at this distance
+            const routePoint = turf.along(routeLine, dist, { units: 'meters' });
+            
+            // 4) Project this route point onto brunnel and calculate distance
+            const projectionOnBrunnel = turf.nearestPointOnLine(brunnelLine, routePoint);
+            const distanceToRoute = turf.distance(routePoint, projectionOnBrunnel, { units: 'meters' });
+            
+            maxDistanceToRoute.push(distanceToRoute);
+            
+            if (distanceToRoute > 5) { // Only log significant distances
+                console.log(`  Route point at ${dist.toFixed(1)}m is ${distanceToRoute.toFixed(1)}m from brunnel`);
+            }
+        }
+        
+        const maxDistanceFound = Math.max(...maxDistanceToRoute);
+        console.log(`Maximum distance from route to brunnel: ${maxDistanceFound.toFixed(1)}m`);
+        console.log(`Should be contained with 3m buffer: ${maxDistanceFound <= 3}`);
+        
+        return maxDistanceFound;
     }
     
     /**

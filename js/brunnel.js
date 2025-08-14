@@ -59,6 +59,18 @@ class Brunnel {
     }
     
     /**
+     * Debug containment for this brunnel
+     * @param {Array} routeCoords - Route coordinates
+     */
+    debugContainment(routeCoords) {
+        if (typeof GeometryUtils === 'undefined') {
+            console.error('GeometryUtils not available for debugging');
+            return;
+        }
+        return GeometryUtils.debugBrunnelContainment(this.geometry, routeCoords, this.getDisplayName());
+    }
+    
+    /**
      * Calculate route span where this brunnel intersects the route
      * @param {Array} routeCoords - Route coordinates
      * @param {number} bufferMeters - Buffer distance
@@ -84,6 +96,7 @@ class Brunnel {
             return true;
         }
         
+        console.log(`Checking alignment for ${this.getDisplayName()}`);
         const aligned = GeometryUtils.isBrunnelAligned(
             this.geometry,
             routeCoords,
@@ -172,14 +185,21 @@ class BrunnelAnalysis {
      * @param {Array} brunnels - Array of Brunnel instances
      * @param {Object} routeBuffer - Buffered route geometry
      */
-    static filterContained(brunnels, routeBuffer) {
-        return brunnels.filter(brunnel => {
+    static filterContained(brunnels, routeBuffer, routeCoords) {
+        const contained = brunnels.filter(brunnel => {
             const isWithin = brunnel.isWithin(routeBuffer);
             if (!isWithin) {
                 brunnel.exclusionReason = 'outlier';
+            } else {
+                // Debug the specific tunnel that should not be included
+                if (brunnel.name && brunnel.name.includes('Túnel de Valdealgorfa')) {
+                    brunnel.debugContainment(routeCoords);
+                }
             }
             return isWithin;
         });
+        console.log(`Containment filter: ${contained.length}/${brunnels.length} brunnels within route buffer`);
+        return contained;
     }
     
     /**
@@ -202,11 +222,17 @@ class BrunnelAnalysis {
      * @param {number} toleranceDegrees - Tolerance in degrees
      */
     static filterAligned(brunnels, routeCoords, cumulativeDistances, toleranceDegrees) {
+        let alignedCount = 0;
         for (const brunnel of brunnels) {
-            if (brunnel.isIncluded() && !brunnel.isAligned(routeCoords, cumulativeDistances, toleranceDegrees)) {
-                brunnel.exclusionReason = 'misaligned';
+            if (brunnel.isIncluded()) {
+                if (brunnel.isAligned(routeCoords, cumulativeDistances, toleranceDegrees)) {
+                    alignedCount++;
+                } else {
+                    brunnel.exclusionReason = 'misaligned';
+                }
             }
         }
+        console.log(`Alignment filter: ${alignedCount}/${brunnels.filter(b => b.exclusionReason !== 'outlier').length} brunnels aligned within ${toleranceDegrees}° tolerance`);
     }
     
     /**
