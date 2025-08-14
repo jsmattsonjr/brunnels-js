@@ -58,9 +58,8 @@ class MapVisualization {
      * Add route to map
      * @param {Array} routeCoords - Route coordinates
      * @param {Object} metadata - Route metadata
-     * @param {Object} routeBuffer - Optional route buffer polygon for debugging
      */
-    addRoute(routeCoords, metadata, routeBuffer = null) {
+    addRoute(routeCoords, metadata) {
         // Convert to Leaflet format
         const latLngs = routeCoords.map(coord => [coord.lat, coord.lon]);
         
@@ -70,17 +69,6 @@ class MapVisualization {
             weight: 3,
             opacity: 0.8
         }).addTo(this.map);
-        
-        // Add buffer polygon if provided (for debugging)
-        if (routeBuffer) {
-            const bufferCoords = routeBuffer.geometry.coordinates[0].map(coord => [coord[1], coord[0]]); // [lon,lat] -> [lat,lon]
-            L.polygon(bufferCoords, {
-                color: '#e74c3c',
-                weight: 1,
-                opacity: 0.5,
-                fillOpacity: 0.2
-            }).addTo(this.map);
-        }
         
         // Add start marker
         if (routeCoords.length > 0) {
@@ -257,9 +245,8 @@ class MapVisualization {
      * @param {Array} routeCoords - Route coordinates
      * @param {Object} routeMetadata - Route metadata
      * @param {Array} brunnels - Array of Brunnel instances
-     * @param {Object} routeBuffer - Optional route buffer polygon for debugging
      */
-    updateMap(routeCoords, routeMetadata, brunnels, routeBuffer = null) {
+    updateMap(routeCoords, routeMetadata, brunnels) {
         // Clear existing layers
         if (this.routeLayer) {
             this.map.removeLayer(this.routeLayer);
@@ -268,7 +255,7 @@ class MapVisualization {
         this.brunnelLayers = [];
         
         // Add route and brunnels
-        this.addRoute(routeCoords, routeMetadata, routeBuffer);
+        this.addRoute(routeCoords, routeMetadata);
         this.addBrunnels(brunnels);
         
         // Fit bounds to new data

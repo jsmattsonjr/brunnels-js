@@ -196,8 +196,7 @@ class BrunnelsApp {
         this.mapVisualization.updateMap(
             this.route.coordinates,
             this.route.metadata,
-            this.brunnels,
-            this.routeBuffer
+            this.brunnels
         );
     }
     
