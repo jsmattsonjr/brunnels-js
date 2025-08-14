@@ -48,15 +48,19 @@ class GeometryUtils {
     /**
      * Get route segment between two distances (includes existing vertices only, no interpolation)
      * @param {Array} routeCoords - Route coordinates
-     * @param {Array} cumulativeDistances - Pre-calculated cumulative distances
-     * @param {number} startDist - Start distance in meters
-     * @param {number} endDist - End distance in meters
+     * @param {Array} cumulativeDistances - Pre-calculated cumulative distances in meters
+     * @param {number} startDist - Start distance in kilometers (from route span)
+     * @param {number} endDist - End distance in kilometers (from route span)
      * @returns {Array} Array of coordinates for the route segment
      */
     static getRouteSegment(routeCoords, cumulativeDistances, startDist, endDist) {
         if (startDist >= endDist || startDist < 0) {
             return [];
         }
+        
+        // Convert route span distances from kilometers to meters to match cumulativeDistances
+        const startDistMeters = startDist * 1000;
+        const endDistMeters = endDist * 1000;
         
         let startIndex = -1;
         let endIndex = -1;
@@ -65,11 +69,11 @@ class GeometryUtils {
         for (let i = 0; i < cumulativeDistances.length; i++) {
             const currentDistance = cumulativeDistances[i];
             
-            if (startIndex === -1 && currentDistance >= startDist) {
+            if (startIndex === -1 && currentDistance >= startDistMeters) {
                 startIndex = Math.max(0, i - 1); // Include one point before if possible
             }
             
-            if (currentDistance >= endDist) {
+            if (currentDistance >= endDistMeters) {
                 endIndex = Math.min(routeCoords.length - 1, i + 1); // Include one point after if possible
                 break;
             }
@@ -165,8 +169,24 @@ class GeometryUtils {
         const routeSegment = this.getRouteSegment(routeCoords, cumulativeDistances, routeSpan.startDistance, routeSpan.endDistance);
         
         if (routeSegment.length < 2) {
+            console.log('  Alignment: route segment too short, returning true');
             return true; // Can't determine alignment
         }
+        
+        console.log(`  Checking alignment: brunnel span ${routeSpan.startDistance.toFixed(3)}-${routeSpan.endDistance.toFixed(3)} km, route segment has ${routeSegment.length} points`);
+        
+        // Debug: show the route segment distances
+        const routeSegmentDistances = [];
+        for (let i = 0; i < routeSegment.length; i++) {
+            // Find this point in the original route to get its distance
+            for (let j = 0; j < routeCoords.length; j++) {
+                if (routeCoords[j].lat === routeSegment[i].lat && routeCoords[j].lon === routeSegment[i].lon) {
+                    routeSegmentDistances.push((cumulativeDistances[j] / 1000).toFixed(3));
+                    break;
+                }
+            }
+        }
+        console.log(`  Route segment points at distances: [${routeSegmentDistances.join(', ')}] km`);
         
         let minBearingDiff = Infinity;
         let alignedSegments = [];
@@ -187,11 +207,13 @@ class GeometryUtils {
                 minBearingDiff = Math.min(minBearingDiff, bearingDiff);
                 
                 if (bearingDiff <= toleranceDegrees) {
+                    console.log(`  ALIGNED: brunnel bearing ${brunnelBearing.toFixed(1)}°, route bearing ${routeBearing.toFixed(1)}°, diff ${bearingDiff.toFixed(1)}° <= ${toleranceDegrees}°`);
                     return true;
                 }
             }
         }
         
+        console.log(`  NOT ALIGNED: minimum bearing difference ${minBearingDiff.toFixed(1)}° > ${toleranceDegrees}°`);
         return false;
     }
     
