@@ -40,32 +40,50 @@ class GeometryUtils {
     }
     
     /**
-     * Get substring of route between two distances (simplified version of Shapely's substring)
-     * Only handles positive distances, no interpolation - just returns existing vertices
+     * Get route segment between two distances (includes existing vertices only, no interpolation)
      * @param {Array} routeCoords - Route coordinates
      * @param {Array} cumulativeDistances - Pre-calculated cumulative distances
      * @param {number} startDist - Start distance in meters
      * @param {number} endDist - End distance in meters
-     * @returns {Array} Array of coordinates for the substring
+     * @returns {Array} Array of coordinates for the route segment
      */
-    static substring(routeCoords, cumulativeDistances, startDist, endDist) {
+    static getRouteSegment(routeCoords, cumulativeDistances, startDist, endDist) {
         if (startDist >= endDist || startDist < 0) {
             return [];
         }
         
-        const vertexList = [];
+        let startIndex = -1;
+        let endIndex = -1;
         
-        // Find vertices that fall within the distance range
-        for (let i = 0; i < routeCoords.length; i++) {
+        // Find the indices that bracket our distance range
+        for (let i = 0; i < cumulativeDistances.length; i++) {
             const currentDistance = cumulativeDistances[i];
-            if (startDist < currentDistance && currentDistance < endDist) {
-                vertexList.push(routeCoords[i]);
-            } else if (currentDistance >= endDist) {
+            
+            if (startIndex === -1 && currentDistance >= startDist) {
+                startIndex = Math.max(0, i - 1); // Include one point before if possible
+            }
+            
+            if (currentDistance >= endDist) {
+                endIndex = Math.min(routeCoords.length - 1, i + 1); // Include one point after if possible
                 break;
             }
         }
         
-        return vertexList;
+        // If we didn't find an end index, use the last point
+        if (endIndex === -1) {
+            endIndex = routeCoords.length - 1;
+        }
+        
+        // If we didn't find a start index, return empty
+        if (startIndex === -1) {
+            return [];
+        }
+        
+        // Return the subset of route coordinates
+        const result = routeCoords.slice(startIndex, endIndex + 1);
+        console.log(`Route segment: ${startDist.toFixed(3)}-${endDist.toFixed(3)}m, indices ${startIndex}-${endIndex}, found ${result.length} vertices`);
+        
+        return result;
     }
     
     /**
@@ -123,7 +141,7 @@ class GeometryUtils {
     }
     
     /**
-     * Check if brunnel bearing aligns with route bearing within tolerance
+     * Check if brunnel bearing aligns with route bearing within tolerance using geodetic bearings
      * Uses route substring (like Python version) for the alignment test
      * @param {Array} brunnelCoords - Brunnel coordinates
      * @param {Array} routeCoords - Route coordinates
@@ -133,53 +151,89 @@ class GeometryUtils {
      * @returns {boolean} True if aligned
      */
     static isBrunnelAligned(brunnelCoords, routeCoords, cumulativeDistances, routeSpan, toleranceDegrees) {
+        console.log('Input validation:', {
+            brunnelCoords: brunnelCoords.length,
+            routeCoords: routeCoords.length,
+            routeSpan,
+            toleranceDegrees
+        });
+        
         if (brunnelCoords.length < 2 || routeCoords.length < 2 || !routeSpan) {
+            console.log('Early return: insufficient data');
             return true;
         }
         
-        const toleranceRadians = toleranceDegrees * Math.PI / 180;
-        const cosThreshold = Math.cos(toleranceRadians);
+        // Get route segment within the brunnel's span (similar to Python version)
+        const routeSegment = this.getRouteSegment(routeCoords, cumulativeDistances, routeSpan.startDistance, routeSpan.endDistance);
+        console.log('Route segment calculation:', {
+            startDistance: routeSpan.startDistance,
+            endDistance: routeSpan.endDistance,
+            segmentLength: routeSegment.length
+        });
         
-        // Get route substring within the brunnel's span (like Python version)
-        const routeSubstring = this.substring(routeCoords, cumulativeDistances, routeSpan.startDistance, routeSpan.endDistance);
-        
-        if (routeSubstring.length < 2) {
+        if (routeSegment.length < 2) {
+            console.log('Early return: route segment too short');
             return true; // Can't determine alignment
         }
         
-        // Check each brunnel segment against each route substring segment
+        console.log(`Checking alignment for brunnel with ${brunnelCoords.length} coords, tolerance: ${toleranceDegrees}°`);
+        console.log(`Route segment has ${routeSegment.length} coords`);
+        
+        let minBearingDiff = Infinity;
+        let alignedSegments = [];
+        
+        // Check each brunnel segment against each route substring segment using rhumb bearings
         for (let i = 0; i < brunnelCoords.length - 1; i++) {
-            const brunnelVector = this.getUnitVector(brunnelCoords[i], brunnelCoords[i + 1]);
+            const brunnelStart = turf.point([brunnelCoords[i].lon, brunnelCoords[i].lat]);
+            const brunnelEnd = turf.point([brunnelCoords[i + 1].lon, brunnelCoords[i + 1].lat]);
+            const brunnelBearing = turf.rhumbBearing(brunnelStart, brunnelEnd);
             
-            for (let j = 0; j < routeSubstring.length - 1; j++) {
-                const routeVector = this.getUnitVector(routeSubstring[j], routeSubstring[j + 1]);
+            for (let j = 0; j < routeSegment.length - 1; j++) {
+                const routeStart = turf.point([routeSegment[j].lon, routeSegment[j].lat]);
+                const routeEnd = turf.point([routeSegment[j + 1].lon, routeSegment[j + 1].lat]);
+                const routeBearing = turf.rhumbBearing(routeStart, routeEnd);
                 
-                // Check both parallel and anti-parallel alignment using dot product
-                const dotProduct = Math.abs(
-                    brunnelVector.x * routeVector.x + brunnelVector.y * routeVector.y
-                );
+                // Calculate bearing difference (handles wrap-around)
+                const bearingDiff = this.getBearingDifference(brunnelBearing, routeBearing);
+                minBearingDiff = Math.min(minBearingDiff, bearingDiff);
                 
-                if (dotProduct >= cosThreshold) {
+                if (bearingDiff <= toleranceDegrees) {
+                    alignedSegments.push({
+                        brunnelBearing: brunnelBearing.toFixed(1),
+                        routeBearing: routeBearing.toFixed(1),
+                        diff: bearingDiff.toFixed(1)
+                    });
+                    console.log(`ALIGNED: Brunnel bearing ${brunnelBearing.toFixed(1)}°, Route bearing ${routeBearing.toFixed(1)}°, Diff: ${bearingDiff.toFixed(1)}°`);
                     return true;
                 }
             }
         }
         
+        console.log(`NOT ALIGNED: Minimum bearing difference: ${minBearingDiff.toFixed(1)}° (tolerance: ${toleranceDegrees}°)`);
         return false;
     }
     
     /**
-     * Get unit vector between two points
+     * Calculate the minimum bearing difference between two bearings (handles wrap-around and reversal)
+     * @param {number} bearing1 - First bearing in degrees
+     * @param {number} bearing2 - Second bearing in degrees
+     * @returns {number} Minimum difference in degrees (0-90, considering both parallel and anti-parallel)
      */
-    static getUnitVector(point1, point2) {
-        const dx = point2.lon - point1.lon;
-        const dy = point2.lat - point1.lat;
-        const length = Math.sqrt(dx * dx + dy * dy);
+    static getBearingDifference(bearing1, bearing2) {
+        let diff = Math.abs(bearing1 - bearing2);
         
-        return {
-            x: dx / length,
-            y: dy / length
-        };
+        // Handle wrap-around (e.g., 359° and 1° should be 2° apart, not 358°)
+        if (diff > 180) {
+            diff = 360 - diff;
+        }
+        
+        // Handle reversal: a bridge at 180° should align with a route at 0° 
+        // (consider both parallel and anti-parallel alignment)
+        if (diff > 90) {
+            diff = Math.abs(180 - diff);
+        }
+        
+        return diff;
     }
     
     /**

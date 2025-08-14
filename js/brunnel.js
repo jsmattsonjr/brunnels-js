@@ -91,13 +91,17 @@ class Brunnel {
             return true;
         }
         
-        return GeometryUtils.isBrunnelAligned(
+        console.log(`\n=== Checking alignment for ${this.getDisplayName()} ===`);
+        const aligned = GeometryUtils.isBrunnelAligned(
             this.geometry,
             routeCoords,
             cumulativeDistances,
             this.routeSpan,
             toleranceDegrees
         );
+        console.log(`Result: ${aligned ? 'ALIGNED' : 'MISALIGNED'}\n`);
+        
+        return aligned;
     }
     
     /**
