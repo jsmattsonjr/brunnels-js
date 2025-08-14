@@ -213,22 +213,18 @@ class BrunnelsApp {
             return;
         }
         
-        // Sort brunnels by route distance
+        // Sort brunnels by route distance - only show included ones
         const sortedBrunnels = [...this.brunnels]
-            .filter(b => b.routeSpan)
+            .filter(b => b.routeSpan && b.isIncluded())
             .sort((a, b) => a.routeSpan.startDistance - b.routeSpan.startDistance);
         
         const listHTML = sortedBrunnels.map(brunnel => {
-            const cssClass = `brunnel-item ${brunnel.type} ${brunnel.isIncluded() ? 'included' : 'excluded'}`;
-            const status = brunnel.isIncluded() ? '*' : '-';
+            const cssClass = `brunnel-item ${brunnel.type} included`;
             
             return `
                 <div class="${cssClass}">
-                    <div class="brunnel-distance">${brunnel.getRouteSpanString()} ${status}</div>
+                    <div class="brunnel-distance">${brunnel.getRouteSpanString()}</div>
                     <div class="brunnel-name">${brunnel.getDisplayName()}</div>
-                    <div class="brunnel-details">
-                        ${brunnel.exclusionReason ? `Excluded: ${brunnel.exclusionReason}` : 'Included'}
-                    </div>
                 </div>
             `;
         }).join('');

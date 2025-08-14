@@ -43,7 +43,7 @@ class MapVisualization {
         // Add layer control to map
         L.control.layers(baseLayers, null, {
             position: 'topright',
-            collapsed: false
+            collapsed: true
         }).addTo(this.map);
         
         // Fit map to route bounds
@@ -127,12 +127,15 @@ class MapVisualization {
         this.brunnelLayers.forEach(layer => this.map.removeLayer(layer));
         this.brunnelLayers = [];
         
-        // Add each brunnel
-        for (const brunnel of brunnels) {
+        // Filter to only show included brunnels
+        const includedBrunnels = brunnels.filter(brunnel => brunnel.isIncluded());
+        
+        // Add each included brunnel
+        for (const brunnel of includedBrunnels) {
             this.addBrunnel(brunnel);
         }
         
-        // Add legend
+        // Add legend (pass all brunnels for stats calculation)
         this.addLegend(brunnels);
     }
     
@@ -208,11 +211,8 @@ class MapVisualization {
                 <div style="background: white; padding: 10px; border-radius: 5px; box-shadow: 0 0 10px rgba(0,0,0,0.3);">
                     <h4>Brunnels Legend</h4>
                     <div><span style="color: #3498db; font-weight: bold;">―</span> Route</div>
-                    <div><span style="color: #e74c3c; font-weight: bold;">―</span> Bridges (${stats.includedBridges}/${stats.totalBridges})</div>
-                    <div><span style="color: #9b59b6; font-weight: bold;">―</span> Tunnels (${stats.includedTunnels}/${stats.totalTunnels})</div>
-                    <div><span style="color: #bdc3c7; font-weight: bold;">―</span> Excluded (${stats.excludedCount})</div>
-                    <div><span style="color: #27ae60; font-weight: bold;">📍</span> Route Start</div>
-                    <div><span style="color: #e74c3c; font-weight: bold;">📍</span> Route End</div>
+                    <div><span style="color: #e74c3c; font-weight: bold;">―</span> Bridges (${stats.includedBridges})</div>
+                    <div><span style="color: #9b59b6; font-weight: bold;">―</span> Tunnels (${stats.includedTunnels})</div>
                 </div>
             `;
             return div;
