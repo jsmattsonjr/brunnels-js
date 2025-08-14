@@ -115,9 +115,10 @@ class Brunnel {
             return 'No span';
         }
         
-        const startKm = (this.routeSpan.startDistance / 1000).toFixed(2);
-        const endKm = (this.routeSpan.endDistance / 1000).toFixed(2);
-        const lengthKm = ((this.routeSpan.endDistance - this.routeSpan.startDistance) / 1000).toFixed(2);
+        // Route span distances are already in kilometers from turf.nearestPointOnLine
+        const startKm = this.routeSpan.startDistance.toFixed(2);
+        const endKm = this.routeSpan.endDistance.toFixed(2);
+        const lengthKm = (this.routeSpan.endDistance - this.routeSpan.startDistance).toFixed(2);
         
         return `${startKm}-${endKm} km (${lengthKm} km)`;
     }
