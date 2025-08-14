@@ -84,19 +84,37 @@ class MapVisualization {
         // Add start marker
         if (routeCoords.length > 0) {
             const startCoord = routeCoords[0];
+            const startIcon = L.icon({
+                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+                iconSize: [25, 41],
+                iconAnchor: [12, 41],
+                popupAnchor: [1, -34],
+                shadowSize: [41, 41]
+            });
+            
             L.marker([startCoord.lat, startCoord.lon], {
-                icon: this.createCustomIcon('🚀', '#27ae60')
+                icon: startIcon
             }).addTo(this.map)
-              .bindPopup(`Route Start<br/>Distance: 0.00 km`);
+              .bindPopup(`<strong>Route Start</strong><br/>Distance: 0.00 km`);
         }
         
         // Add end marker
         if (routeCoords.length > 1) {
             const endCoord = routeCoords[routeCoords.length - 1];
+            const endIcon = L.icon({
+                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+                iconSize: [25, 41],
+                iconAnchor: [12, 41],
+                popupAnchor: [1, -34],
+                shadowSize: [41, 41]
+            });
+            
             L.marker([endCoord.lat, endCoord.lon], {
-                icon: this.createCustomIcon('🏁', '#e74c3c')
+                icon: endIcon
             }).addTo(this.map)
-              .bindPopup(`Route End<br/>Distance: ${(metadata.totalDistance / 1000).toFixed(2)} km`);
+              .bindPopup(`<strong>Route End</strong><br/>Distance: ${(metadata.totalDistance / 1000).toFixed(2)} km`);
         }
     }
     
@@ -193,8 +211,8 @@ class MapVisualization {
                     <div><span style="color: #e74c3c; font-weight: bold;">―</span> Bridges (${stats.includedBridges}/${stats.totalBridges})</div>
                     <div><span style="color: #9b59b6; font-weight: bold;">―</span> Tunnels (${stats.includedTunnels}/${stats.totalTunnels})</div>
                     <div><span style="color: #bdc3c7; font-weight: bold;">―</span> Excluded (${stats.excludedCount})</div>
-                    <div>🚀 Route Start</div>
-                    <div>🏁 Route End</div>
+                    <div><span style="color: #27ae60; font-weight: bold;">📍</span> Route Start</div>
+                    <div><span style="color: #e74c3c; font-weight: bold;">📍</span> Route End</div>
                 </div>
             `;
             return div;
