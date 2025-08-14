@@ -100,10 +100,11 @@ class Brunnel {
      * @returns {string} Display name
      */
     getDisplayName() {
+        const capitalizedType = this.type.charAt(0).toUpperCase() + this.type.slice(1);
         if (this.name && this.name !== this.type) {
-            return `${this.type}: ${this.name}`;
+            return `${capitalizedType}: ${this.name}`;
         }
-        return `${this.type}: <OSM ${this.id}>`;
+        return `${capitalizedType}: <OSM ${this.id}>`;
     }
     
     /**

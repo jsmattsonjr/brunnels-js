@@ -223,8 +223,8 @@ class BrunnelsApp {
             
             return `
                 <div class="${cssClass}" data-brunnel-id="${brunnel.id}">
+                    <div class="brunnel-name"><strong>${brunnel.getDisplayName()}</strong></div>
                     <div class="brunnel-distance">${brunnel.getRouteSpanString()}</div>
-                    <div class="brunnel-name">${brunnel.getDisplayName()}</div>
                 </div>
             `;
         }).join('');
