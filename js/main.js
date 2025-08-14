@@ -146,9 +146,6 @@ class BrunnelsApp {
             },
             async findBrunnels(options) {
                 const expandedBounds = GeometryUtils.expandBounds(bounds, options.queryBuffer || 10);
-                console.log('Original bounds:', bounds);
-                console.log('Expanded bounds for Overpass query:', expandedBounds);
-                console.log('Query buffer:', options.queryBuffer || 10, 'meters');
                 return await OverpassAPI.queryBrunnels(expandedBounds, options);
             }
         };
@@ -171,10 +168,10 @@ class BrunnelsApp {
      */
     async applyFiltering(options) {
         // Create route buffer
-        const routeBuffer = GeometryUtils.createRouteBuffer(this.route.coordinates, options.routeBuffer);
+        this.routeBuffer = GeometryUtils.createRouteBuffer(this.route.coordinates, options.routeBuffer);
         
         // Filter contained brunnels
-        this.brunnels = BrunnelAnalysis.filterContained(this.brunnels, routeBuffer);
+        this.brunnels = BrunnelAnalysis.filterContained(this.brunnels, this.routeBuffer);
         
         // Calculate route spans
         BrunnelAnalysis.calculateRouteSpans(this.brunnels, this.route.coordinates, options.routeBuffer);
@@ -211,7 +208,8 @@ class BrunnelsApp {
         this.mapVisualization.updateMap(
             this.route.coordinates,
             this.route.metadata,
-            this.brunnels
+            this.brunnels,
+            this.routeBuffer
         );
     }
     

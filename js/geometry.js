@@ -14,7 +14,13 @@ class GeometryUtils {
         const lineString = turf.lineString(
             routeCoords.map(coord => [coord.lon, coord.lat])
         );
-        return turf.buffer(lineString, bufferMeters, { units: 'meters' });
+        
+        // Convert meters to kilometers since turf.buffer doesn't support meters
+        const bufferKilometers = bufferMeters / 1000;
+        
+        const buffer = turf.buffer(lineString, bufferKilometers, { units: 'kilometers' });
+        
+        return buffer;
     }
     
     /**
@@ -81,24 +87,24 @@ class GeometryUtils {
         
         // Return the subset of route coordinates
         const result = routeCoords.slice(startIndex, endIndex + 1);
-        console.log(`Route segment: ${startDist.toFixed(3)}-${endDist.toFixed(3)}m, indices ${startIndex}-${endIndex}, found ${result.length} vertices`);
         
         return result;
     }
     
     /**
-     * Check if brunnel is completely contained within buffered route using Turf
+     * Check if brunnel is completely within buffered route using Turf
      * @param {Array} brunnelCoords - Brunnel coordinates
      * @param {Object} routeBuffer - Buffered route polygon from createRouteBuffer
-     * @returns {boolean} True if brunnel is completely contained (matches Python shapely.contains)
+     * @returns {boolean} True if brunnel is completely within (matches Python shapely.contains)
      */
-    static brunnelIsContainedBy(brunnelCoords, routeBuffer) {
+    static brunnelWithin(brunnelCoords, routeBuffer) {
         // Create brunnel LineString geometry
         const brunnelLine = turf.lineString(brunnelCoords.map(coord => [coord.lon, coord.lat]));
         
-        // Use turf.booleanContains to match Python's shapely.contains()
-        // Returns true if routeBuffer completely contains the brunnel
-        return turf.booleanContains(routeBuffer, brunnelLine);
+        // Use turf.booleanWithin to match Python's shapely.contains() behavior
+        // turf.booleanContains has issues with LineString vs Polygon containment
+        // turf.booleanWithin(brunnelLine, routeBuffer) correctly checks if line is within polygon
+        return turf.booleanWithin(brunnelLine, routeBuffer);
     }
     
     /**
@@ -151,33 +157,16 @@ class GeometryUtils {
      * @returns {boolean} True if aligned
      */
     static isBrunnelAligned(brunnelCoords, routeCoords, cumulativeDistances, routeSpan, toleranceDegrees) {
-        console.log('Input validation:', {
-            brunnelCoords: brunnelCoords.length,
-            routeCoords: routeCoords.length,
-            routeSpan,
-            toleranceDegrees
-        });
-        
         if (brunnelCoords.length < 2 || routeCoords.length < 2 || !routeSpan) {
-            console.log('Early return: insufficient data');
             return true;
         }
         
         // Get route segment within the brunnel's span (similar to Python version)
         const routeSegment = this.getRouteSegment(routeCoords, cumulativeDistances, routeSpan.startDistance, routeSpan.endDistance);
-        console.log('Route segment calculation:', {
-            startDistance: routeSpan.startDistance,
-            endDistance: routeSpan.endDistance,
-            segmentLength: routeSegment.length
-        });
         
         if (routeSegment.length < 2) {
-            console.log('Early return: route segment too short');
             return true; // Can't determine alignment
         }
-        
-        console.log(`Checking alignment for brunnel with ${brunnelCoords.length} coords, tolerance: ${toleranceDegrees}°`);
-        console.log(`Route segment has ${routeSegment.length} coords`);
         
         let minBearingDiff = Infinity;
         let alignedSegments = [];
@@ -198,18 +187,11 @@ class GeometryUtils {
                 minBearingDiff = Math.min(minBearingDiff, bearingDiff);
                 
                 if (bearingDiff <= toleranceDegrees) {
-                    alignedSegments.push({
-                        brunnelBearing: brunnelBearing.toFixed(1),
-                        routeBearing: routeBearing.toFixed(1),
-                        diff: bearingDiff.toFixed(1)
-                    });
-                    console.log(`ALIGNED: Brunnel bearing ${brunnelBearing.toFixed(1)}°, Route bearing ${routeBearing.toFixed(1)}°, Diff: ${bearingDiff.toFixed(1)}°`);
                     return true;
                 }
             }
         }
         
-        console.log(`NOT ALIGNED: Minimum bearing difference: ${minBearingDiff.toFixed(1)}° (tolerance: ${toleranceDegrees}°)`);
         return false;
     }
     

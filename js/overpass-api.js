@@ -117,7 +117,6 @@ out geom qt;`;
             if (element.type === 'count') {
                 // First count is bridges, second count is tunnels
                 currentType = currentType === 'bridges' ? 'tunnels' : 'bridges';
-                console.log(`Overpass query found ${element.tags.total} ${currentType}`);
             } else if (element.type === 'way' && element.geometry) {
                 const brunnel = {
                     id: element.id,

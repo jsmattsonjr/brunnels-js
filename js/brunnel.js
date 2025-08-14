@@ -48,17 +48,14 @@ class Brunnel {
     }
     
     /**
-     * Check if brunnel is contained by route buffer - matches Python is_contained_by()
+     * Check if brunnel is within route buffer - matches Python is_contained_by()
      * @param {Object} routeBuffer - Buffered route geometry  
-     * @returns {boolean} True if contained
+     * @returns {boolean} True if within
      */
-    isContainedBy(routeBuffer) {
-        const isContained = GeometryUtils.brunnelIsContainedBy(this.geometry, routeBuffer);
-        // Debug the problematic bridge
-        if (!isContained && this.type === 'bridge') {
-            console.log('Bridge excluded from containment:', this.id, this.name);
-        }
-        return isContained;
+    isWithin(routeBuffer) {
+        const isWithin = GeometryUtils.brunnelWithin(this.geometry, routeBuffer);
+        
+        return isWithin;
     }
     
     /**
@@ -73,10 +70,6 @@ class Brunnel {
             bufferMeters
         );
         
-        // Debug bridges that fail to get route spans
-        if (!this.routeSpan && this.type === 'bridge') {
-            console.log('Bridge failed to get route span:', this.id, this.name);
-        }
     }
     
     /**
@@ -91,7 +84,6 @@ class Brunnel {
             return true;
         }
         
-        console.log(`\n=== Checking alignment for ${this.getDisplayName()} ===`);
         const aligned = GeometryUtils.isBrunnelAligned(
             this.geometry,
             routeCoords,
@@ -99,7 +91,6 @@ class Brunnel {
             this.routeSpan,
             toleranceDegrees
         );
-        console.log(`Result: ${aligned ? 'ALIGNED' : 'MISALIGNED'}\n`);
         
         return aligned;
     }
@@ -175,17 +166,17 @@ class Brunnel {
  */
 class BrunnelAnalysis {
     /**
-     * Filter brunnels that intersect with route
+     * Filter brunnels that are within route buffer
      * @param {Array} brunnels - Array of Brunnel instances
      * @param {Object} routeBuffer - Buffered route geometry
      */
     static filterContained(brunnels, routeBuffer) {
         return brunnels.filter(brunnel => {
-            const isContained = brunnel.isContainedBy(routeBuffer);
-            if (!isContained) {
+            const isWithin = brunnel.isWithin(routeBuffer);
+            if (!isWithin) {
                 brunnel.exclusionReason = 'outlier';
             }
-            return isContained;
+            return isWithin;
         });
     }
     
@@ -282,15 +273,6 @@ class BrunnelAnalysis {
         const bridges = brunnels.filter(b => b.type === 'bridge');
         const tunnels = brunnels.filter(b => b.type === 'tunnel');
         
-        // Debug logging
-        console.log('Stats calculation:', {
-            totalBrunnels: brunnels.length,
-            bridges: bridges.length,
-            tunnels: tunnels.length,
-            bridgeTypes: bridges.map(b => b.type),
-            tunnelTypes: tunnels.map(b => b.type),
-            allTypes: brunnels.map(b => b.type)
-        });
         
         return {
             totalBrunnels: brunnels.length,
