@@ -58,16 +58,9 @@ class BrunnelsApp {
             
             if (this.brunnels.length === 0) {
                 this.showResultsScreen();
-                this.updateSummary({ 
-                    totalBrunnels: 0, 
-                    totalBridges: 0, 
-                    totalTunnels: 0,
-                    includedBridges: 0,
-                    includedTunnels: 0,
-                    excludedCount: 0 
-                });
                 this.initializeMap();
                 this.mapVisualization.addRoute(this.route.coordinates, this.route.metadata);
+                this.updateBrunnelList(); // Show empty list
                 this.showMessage('No bridges or tunnels found near your route.');
                 return;
             }
@@ -78,7 +71,6 @@ class BrunnelsApp {
             
             // Show results
             this.showResultsScreen();
-            this.updateSummary(BrunnelAnalysis.getSummaryStats(this.brunnels));
             this.updateBrunnelList();
             this.updateMap();
             
@@ -209,36 +201,6 @@ class BrunnelsApp {
         );
     }
     
-    /**
-     * Update summary statistics
-     */
-    updateSummary(stats) {
-        const summaryDiv = document.getElementById('summaryStats');
-        summaryDiv.innerHTML = `
-            <div class="summary-stats">
-                <div class="stat-item">
-                    <div class="stat-value">${stats.totalBrunnels}</div>
-                    <div class="stat-label">Total Found</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-value">${stats.includedBridges}</div>
-                    <div class="stat-label">Bridges</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-value">${stats.includedTunnels}</div>
-                    <div class="stat-label">Tunnels</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-value">${stats.excludedCount}</div>
-                    <div class="stat-label">Excluded</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-value">${(this.route.metadata.totalDistance / 1000).toFixed(1)} km</div>
-                    <div class="stat-label">Route Distance</div>
-                </div>
-            </div>
-        `;
-    }
     
     /**
      * Update brunnel list
