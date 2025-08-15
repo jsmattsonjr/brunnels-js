@@ -154,12 +154,15 @@ class MapVisualization {
         polyline._brunnel = brunnel;
         
         // Add hover listeners for reverse highlighting (map -> sidebar)
+        // Always highlight the representative brunnel in sidebar (since only representatives are shown)
         polyline.on('mouseover', () => {
-            this.highlightSidebarItem(brunnel.id, true);
+            const representativeBrunnel = this.getRepresentativeBrunnel(brunnel);
+            this.highlightSidebarItem(representativeBrunnel.id, true);
         });
         
         polyline.on('mouseout', () => {
-            this.highlightSidebarItem(brunnel.id, false);
+            const representativeBrunnel = this.getRepresentativeBrunnel(brunnel);
+            this.highlightSidebarItem(representativeBrunnel.id, false);
         });
         
         this.brunnelLayers.push(polyline);
@@ -174,6 +177,13 @@ class MapVisualization {
     createBrunnelPopup(brunnel) {
         let content = `<strong>${brunnel.getDisplayName()}</strong><br/>`;
         content += `Type: ${brunnel.type}<br/>`;
+        
+        // Show compound brunnel information
+        if (brunnel.compoundGroup && brunnel.compoundGroup.length > 1) {
+            const segmentIndex = brunnel.compoundGroup.indexOf(brunnel) + 1;
+            const totalSegments = brunnel.compoundGroup.length;
+            content += `Segment ${segmentIndex} of ${totalSegments} in compound group<br/>`;
+        }
         
         if (brunnel.routeSpan) {
             content += `Route span: ${brunnel.getRouteSpanString()}<br/>`;
@@ -267,26 +277,34 @@ class MapVisualization {
     }
     
     /**
-     * Highlight a brunnel on the map
+     * Highlight a brunnel on the map - highlights all segments in compound groups
      * @param {string} brunnelId - ID of the brunnel to highlight
      * @param {boolean} highlight - Whether to highlight (true) or unhighlight (false)
      */
     highlightBrunnel(brunnelId, highlight) {
-        const layer = this.brunnelLayerMap.get(brunnelId.toString());
-        if (layer) {
-            if (highlight) {
-                layer.setStyle({
-                    weight: 8,
-                    opacity: 1.0,
-                    color: '#ffff00' // Bright yellow for highlight
-                });
-                layer.bringToFront();
-            } else {
-                // Reset to original style
-                const brunnel = this.findBrunnelById(brunnelId);
-                if (brunnel) {
+        const brunnel = this.findBrunnelById(brunnelId);
+        if (!brunnel) return;
+        
+        // Get all brunnels to highlight (compound group or just the single brunnel)
+        const brunnelsToHighlight = brunnel.compoundGroup && brunnel.compoundGroup.length > 1 
+            ? brunnel.compoundGroup 
+            : [brunnel];
+        
+        // Highlight/unhighlight all segments
+        for (const targetBrunnel of brunnelsToHighlight) {
+            const layer = this.brunnelLayerMap.get(targetBrunnel.id.toString());
+            if (layer) {
+                if (highlight) {
                     layer.setStyle({
-                        color: brunnel.getMapColor(),
+                        weight: 8,
+                        opacity: 1.0,
+                        color: '#ffff00' // Bright yellow for highlight
+                    });
+                    layer.bringToFront();
+                } else {
+                    // Reset to original style
+                    layer.setStyle({
+                        color: targetBrunnel.getMapColor(),
                         weight: brunnel.getMapWeight(),
                         opacity: brunnel.getMapOpacity()
                     });
@@ -295,6 +313,19 @@ class MapVisualization {
         }
     }
     
+    /**
+     * Get the representative brunnel for a given brunnel (for sidebar highlighting)
+     * @param {Brunnel} brunnel - Brunnel instance
+     * @returns {Brunnel} Representative brunnel (either itself or compound group representative)
+     */
+    getRepresentativeBrunnel(brunnel) {
+        if (!brunnel.compoundGroup || brunnel.compoundGroup.length <= 1) {
+            return brunnel;
+        }
+        // Find the representative in the compound group
+        return brunnel.compoundGroup.find(b => b.isRepresentative()) || brunnel;
+    }
+
     /**
      * Highlight a brunnel item in the sidebar
      * @param {string} brunnelId - ID of the brunnel to highlight

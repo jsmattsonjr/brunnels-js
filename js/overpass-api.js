@@ -125,6 +125,7 @@ out geom qt;`;
                         lat: node.lat,
                         lon: node.lon
                     })),
+                    nodes: element.nodes || [], // Store node IDs for compound detection
                     type: currentType === 'bridges' ? 'bridge' : 'tunnel',
                     name: this.extractName(element.tags)
                 };

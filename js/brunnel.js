@@ -9,9 +9,11 @@ class Brunnel {
         this.name = data.name;
         this.tags = data.tags;
         this.geometry = data.geometry; // Array of {lat, lon} coordinates
+        this.nodes = data.nodes || []; // OSM node IDs for compound detection
         this.routeSpan = null; // Will be set during analysis
         this.exclusionReason = null; // null = included, or reason string
         this.overlapGroup = null; // For handling overlapping brunnels
+        this.compoundGroup = null; // Array of Brunnel instances in compound group
     }
     
     /**
@@ -29,7 +31,8 @@ class Brunnel {
                 type: 'bridge',
                 name: bridge.name,
                 tags: bridge.tags,
-                geometry: bridge.geometry
+                geometry: bridge.geometry,
+                nodes: bridge.nodes || []
             }));
         }
         
@@ -40,7 +43,8 @@ class Brunnel {
                 type: 'tunnel',
                 name: tunnel.name,
                 tags: tunnel.tags,
-                geometry: tunnel.geometry
+                geometry: tunnel.geometry,
+                nodes: tunnel.nodes || []
             }));
         }
         
@@ -109,15 +113,87 @@ class Brunnel {
     }
     
     /**
-     * Get display name for the brunnel
+     * Check if this brunnel is the representative of its compound group
+     * @returns {boolean} True if representative (or not in a compound)
+     */
+    isRepresentative() {
+        if (!this.compoundGroup || this.compoundGroup.length <= 1) {
+            return true;
+        }
+        // Representative is the first brunnel in the sorted group
+        const sorted = [...this.compoundGroup].sort((a, b) => 
+            (a.routeSpan?.startDistance || 0) - (b.routeSpan?.startDistance || 0)
+        );
+        return sorted[0] === this;
+    }
+
+    /**
+     * Get compound ID - semicolon-separated OSM IDs for compounds
+     * @returns {string} Compound ID
+     */
+    getCompoundId() {
+        if (!this.compoundGroup || this.compoundGroup.length <= 1) {
+            return this.id.toString();
+        }
+        return this.compoundGroup
+            .map(b => b.id)
+            .sort((a, b) => a - b)
+            .join(';');
+    }
+
+    /**
+     * Get display name for the brunnel (combines compound names)
      * @returns {string} Display name
      */
     getDisplayName() {
         const capitalizedType = this.type.charAt(0).toUpperCase() + this.type.slice(1);
+        
+        if (this.compoundGroup && this.compoundGroup.length > 1) {
+            // For compound brunnels, combine unique names
+            const names = this.compoundGroup
+                .map(b => b.name)
+                .filter(name => name && name !== this.type)
+                .filter((name, index, arr) => arr.indexOf(name) === index); // unique names
+                
+            if (names.length > 0) {
+                return `${capitalizedType}: ${names.join(', ')}`;
+            }
+            
+            // If no meaningful names, show compound ID
+            return `${capitalizedType}: <OSM ${this.getCompoundId()}>`;
+        }
+        
+        // Single brunnel display
         if (this.name && this.name !== this.type) {
             return `${capitalizedType}: ${this.name}`;
         }
         return `${capitalizedType}: <OSM ${this.id}>`;
+    }
+
+    /**
+     * Get route span for compound brunnel (from first to last component)
+     * @returns {Object|null} Route span or null
+     */
+    getCompoundRouteSpan() {
+        if (!this.compoundGroup || this.compoundGroup.length <= 1) {
+            return this.routeSpan;
+        }
+        
+        const spans = this.compoundGroup
+            .map(b => b.routeSpan)
+            .filter(span => span !== null);
+            
+        if (spans.length === 0) {
+            return null;
+        }
+        
+        const startDistance = Math.min(...spans.map(s => s.startDistance));
+        const endDistance = Math.max(...spans.map(s => s.endDistance));
+        
+        return {
+            startDistance,
+            endDistance
+        };
     }
     
     /**
@@ -125,14 +201,15 @@ class Brunnel {
      * @returns {string} Route span description
      */
     getRouteSpanString() {
-        if (!this.routeSpan) {
+        const span = this.getCompoundRouteSpan();
+        if (!span) {
             return 'No span';
         }
         
         // Route span distances are already in kilometers from turf.nearestPointOnLine
-        const startKm = this.routeSpan.startDistance.toFixed(2);
-        const endKm = this.routeSpan.endDistance.toFixed(2);
-        const lengthKm = (this.routeSpan.endDistance - this.routeSpan.startDistance).toFixed(2);
+        const startKm = span.startDistance.toFixed(2);
+        const endKm = span.endDistance.toFixed(2);
+        const lengthKm = (span.endDistance - span.startDistance).toFixed(2);
         
         return `${startKm}-${endKm} km (${lengthKm} km)`;
     }
@@ -213,6 +290,137 @@ class BrunnelAnalysis {
             brunnel.calculateRouteSpan(routeCoords, bufferMeters);
         }
     }
+
+    /**
+     * Find compound brunnels by detecting connected components
+     * @param {Array} brunnels - Array of Brunnel instances
+     */
+    static findCompoundBrunnels(brunnels) {
+        // Separate by type - only same types can form compounds
+        const bridges = brunnels.filter(b => b.type === 'bridge');
+        const tunnels = brunnels.filter(b => b.type === 'tunnel');
+        
+        this._processCompoundBrunnelsForType(bridges);
+        this._processCompoundBrunnelsForType(tunnels);
+    }
+    
+    /**
+     * Process compound brunnels for a specific type
+     * @param {Array} brunnels - Array of Brunnel instances of same type
+     * @private
+     */
+    static _processCompoundBrunnelsForType(brunnels) {
+        if (brunnels.length <= 1) return;
+        
+        const edges = this._buildNodeEdgesMap(brunnels);
+        const components = this._findConnectedComponents(brunnels, edges);
+        this._createCompoundGroups(brunnels, components);
+    }
+    
+    /**
+     * Build edges map: node_id -> array of brunnel indices
+     * @param {Array} brunnels - Array of Brunnel instances
+     * @returns {Map} Node edges map
+     * @private
+     */
+    static _buildNodeEdgesMap(brunnels) {
+        const edges = new Map();
+        
+        brunnels.forEach((brunnel, index) => {
+            if (brunnel.nodes && brunnel.nodes.length > 0) {
+                brunnel.nodes.forEach(nodeId => {
+                    if (!edges.has(nodeId)) {
+                        edges.set(nodeId, []);
+                    }
+                    edges.get(nodeId).push(index);
+                });
+            }
+        });
+        
+        return edges;
+    }
+    
+    /**
+     * Find connected components using breadth-first search
+     * @param {Array} brunnels - Array of Brunnel instances
+     * @param {Map} edges - Node edges map
+     * @returns {Array} Array of component arrays (each containing brunnel indices)
+     * @private
+     */
+    static _findConnectedComponents(brunnels, edges) {
+        const visited = new Set();
+        const components = [];
+        
+        for (let i = 0; i < brunnels.length; i++) {
+            if (visited.has(i)) continue;
+            
+            const component = this._findConnectedComponentBFS(brunnels, edges, i, visited);
+            if (component.length > 0) {
+                components.push(component);
+            }
+        }
+        
+        return components;
+    }
+    
+    /**
+     * Find connected component using BFS starting from given brunnel index
+     * @param {Array} brunnels - Array of Brunnel instances
+     * @param {Map} edges - Node edges map
+     * @param {number} startIndex - Starting brunnel index
+     * @param {Set} visited - Set of visited indices
+     * @returns {Array} Array of brunnel indices in component
+     * @private
+     */
+    static _findConnectedComponentBFS(brunnels, edges, startIndex, visited) {
+        const component = [];
+        const queue = [startIndex];
+        
+        while (queue.length > 0) {
+            const currentIndex = queue.shift();
+            if (visited.has(currentIndex)) continue;
+            
+            visited.add(currentIndex);
+            component.push(currentIndex);
+            
+            const currentBrunnel = brunnels[currentIndex];
+            if (currentBrunnel.nodes) {
+                // Find all brunnels sharing nodes with current brunnel
+                currentBrunnel.nodes.forEach(nodeId => {
+                    if (edges.has(nodeId)) {
+                        edges.get(nodeId).forEach(neighborIndex => {
+                            if (!visited.has(neighborIndex)) {
+                                queue.push(neighborIndex);
+                            }
+                        });
+                    }
+                });
+            }
+        }
+        
+        return component;
+    }
+    
+    /**
+     * Create compound groups for components with multiple brunnels
+     * @param {Array} brunnels - Array of Brunnel instances
+     * @param {Array} components - Array of component arrays
+     * @private
+     */
+    static _createCompoundGroups(brunnels, components) {
+        components.forEach(componentIndices => {
+            if (componentIndices.length > 1) {
+                const compoundGroup = componentIndices.map(index => brunnels[index]);
+                
+                // Set compound group for each brunnel
+                compoundGroup.forEach(brunnel => {
+                    brunnel.compoundGroup = compoundGroup;
+                });
+                
+                console.log(`Found compound ${brunnels[0].type} with ${componentIndices.length} segments: ${compoundGroup.map(b => b.id).join(', ')}`);
+            }
+        });
+    }
     
     /**
      * Filter brunnels by bearing alignment
@@ -236,11 +444,15 @@ class BrunnelAnalysis {
     }
     
     /**
-     * Handle overlapping brunnels (simplified version)
+     * Handle overlapping brunnels - only considers representative brunnels (compound group leaders)
      * @param {Array} brunnels - Array of Brunnel instances
      */
     static handleOverlaps(brunnels) {
-        const includedBrunnels = brunnels.filter(b => b.isIncluded() && b.routeSpan);
+        const includedBrunnels = brunnels.filter(b => 
+            b.isIncluded() && 
+            b.routeSpan && 
+            b.isRepresentative()
+        );
         
         // Group by overlapping route spans
         const overlapGroups = [];

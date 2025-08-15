@@ -176,6 +176,10 @@ class BrunnelsApp {
         // Calculate route spans
         BrunnelAnalysis.calculateRouteSpans(this.brunnels, this.route.coordinates, options.routeBuffer);
         
+        // Find compound brunnels (after route spans calculated, before alignment filtering)
+        this.updateLoadingMessage('Detecting compound bridge/tunnel structures...');
+        BrunnelAnalysis.findCompoundBrunnels(this.brunnels);
+        
         // Filter by alignment
         if (options.bearingTolerance > 0) {
             BrunnelAnalysis.filterAligned(
@@ -226,10 +230,14 @@ class BrunnelsApp {
             return;
         }
         
-        // Sort all brunnels by route distance - show both included and excluded
+        // Only show representative brunnels (atomic units) - both included and excluded
         const sortedBrunnels = [...this.brunnels]
-            .filter(b => b.routeSpan)
-            .sort((a, b) => a.routeSpan.startDistance - b.routeSpan.startDistance);
+            .filter(b => b.routeSpan && b.isRepresentative())
+            .sort((a, b) => {
+                const aSpan = a.getCompoundRouteSpan() || a.routeSpan;
+                const bSpan = b.getCompoundRouteSpan() || b.routeSpan;
+                return aSpan.startDistance - bSpan.startDistance;
+            });
         
         if (sortedBrunnels.length === 0) {
             headerElement.textContent = 'No Brunnels Found';
