@@ -41,6 +41,7 @@ body {
 }
 
 .file-upload-area {
+    margin-top: 60px;
     margin-bottom: 40px;
 }
 
@@ -90,6 +91,93 @@ body {
     background: rgba(255, 255, 255, 0.1);
     border-radius: 8px;
     backdrop-filter: blur(10px);
+}
+
+/* Advanced Options Hover Panel */
+.advanced-options-panel {
+    position: relative;
+    margin-bottom: 30px;
+    display: flex;
+    justify-content: center;
+}
+
+.advanced-options-button {
+    padding: 12px 24px;
+    background: rgba(255, 255, 255, 0.15);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+    font-size: 0.9rem;
+    font-weight: 300;
+    width: 280px;
+}
+
+.advanced-options-button:hover {
+    background: rgba(255, 255, 255, 0.25);
+    transform: translateY(-1px);
+}
+
+.advanced-options-panel:hover .advanced-options-button {
+    opacity: 0;
+    visibility: hidden;
+}
+
+.advanced-options-dropdown {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 16px;
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 6px;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    z-index: 100;
+    width: 280px;
+}
+
+.advanced-options-panel:hover .advanced-options-dropdown {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%);
+}
+
+.advanced-options-dropdown .option-group {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.advanced-options-dropdown .option-group:last-child {
+    margin-bottom: 0;
+}
+
+.advanced-options-dropdown label {
+    color: white;
+    font-size: 0.85rem;
+    font-weight: 300;
+    margin-right: 12px;
+    flex: 1;
+}
+
+.advanced-options-dropdown input[type="number"] {
+    width: 60px;
+    padding: 4px 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    text-align: center;
+    color: #333;
+    background: white;
 }
 
 .option-group {

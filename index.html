@@ -13,6 +13,22 @@
         <div class="upload-content">
             <h1>Analyze a route</h1>
             
+            <!-- Advanced Options Hover Panel -->
+            <div class="advanced-options-panel">
+                <div class="advanced-options-button">Advanced Options</div>
+                <div class="advanced-options-dropdown">
+                    <div class="option-group">
+                        <label for="routeBuffer">Route width (m):</label>
+                        <input type="number" id="routeBuffer" value="3" min="1" max="100" />
+                    </div>
+                    
+                    <div class="option-group">
+                        <label for="bearingTolerance">Bearing tolerance (deg):</label>
+                        <input type="number" id="bearingTolerance" value="20" min="0" max="90" />
+                    </div>
+                </div>
+            </div>
+            
             <div class="file-upload-area">
                 <input type="file" id="gpxFile" accept=".gpx" style="display: none;" />
                 <label for="gpxFile" class="file-upload-button">
@@ -21,23 +37,8 @@
                 </label>
             </div>
             
-            <!-- Hidden options for advanced users -->
-            <div class="advanced-options hidden">
-                <div class="option-group">
-                    <label for="queryBuffer">Search Buffer (meters):</label>
-                    <input type="number" id="queryBuffer" value="10" min="1" max="1000" />
-                </div>
-                
-                <div class="option-group">
-                    <label for="routeBuffer">Route Buffer (meters):</label>
-                    <input type="number" id="routeBuffer" value="3" min="1" max="100" />
-                </div>
-                
-                <div class="option-group">
-                    <label for="bearingTolerance">Bearing Tolerance (degrees):</label>
-                    <input type="number" id="bearingTolerance" value="20" min="0" max="90" />
-                </div>
-            </div>
+            <!-- Hidden query buffer for internal use -->
+            <input type="hidden" id="queryBuffer" value="10" />
         </div>
     </div>
 
