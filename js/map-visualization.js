@@ -123,8 +123,8 @@ class MapVisualization {
         for (const brunnel of brunnelsToAdd) {
             this.addBrunnel(brunnel);
             
-            // If brunnel is excluded, hide it initially but keep it in the layer map
-            if (!brunnel.isIncluded()) {
+            // If brunnel is not selected, hide it initially but keep it in the layer map
+            if (!brunnel.selected) {
                 const layer = this.brunnelLayerMap.get(brunnel.id.toString());
                 if (layer && this.map.hasLayer(layer)) {
                     this.map.removeLayer(layer);
@@ -156,6 +156,7 @@ class MapVisualization {
         
         // Store brunnel reference on the layer for style reset
         polyline._brunnel = brunnel;
+        polyline._isHighlighted = false;
         
         // Add hover listeners for reverse highlighting (map -> sidebar)
         // Always highlight the representative brunnel in sidebar (since only representatives are shown)
@@ -215,8 +216,10 @@ class MapVisualization {
             content += `Route span: ${startKm}-${endKm} km (${lengthKm} km)<br/>`;
         }
         
-        if (brunnel.exclusionReason) {
+        if (brunnel.exclusionReason && !brunnel.selected) {
             content += `<em>Excluded: ${brunnel.exclusionReason}</em><br/>`;
+        } else if (brunnel.exclusionReason && brunnel.selected) {
+            content += `<em>Originally excluded (${brunnel.exclusionReason}), user-selected</em><br/>`;
         }
         
         // Add some OSM tags
@@ -302,6 +305,7 @@ class MapVisualization {
                         color: '#ffff00' // Bright yellow for highlight
                     });
                     layer.bringToFront();
+                    layer._isHighlighted = true;
                 } else {
                     // Reset to original style
                     layer.setStyle({
@@ -309,9 +313,10 @@ class MapVisualization {
                         weight: targetBrunnel.getMapWeight(),
                         opacity: targetBrunnel.getMapOpacity()
                     });
+                    layer._isHighlighted = false;
                     
-                    // Remove excluded brunnels from map after highlighting
-                    if (!targetBrunnel.isIncluded()) {
+                    // Remove unselected brunnels from map after highlighting
+                    if (!targetBrunnel.selected) {
                         this.map.removeLayer(layer);
                     }
                 }
@@ -357,11 +362,23 @@ class MapVisualization {
      */
     setBrunnelVisibility(brunnelId, visible) {
         const layer = this.brunnelLayerMap.get(brunnelId.toString());
-        if (layer) {
+        if (layer && layer._brunnel) {
+            const brunnel = layer._brunnel;
+            
             if (visible) {
                 // Add layer back to map if it's not already there
                 if (!this.map.hasLayer(layer)) {
                     this.map.addLayer(layer);
+                }
+                
+                // Only update style if not currently highlighted (yellow)
+                if (!layer._isHighlighted) {
+                    const newStyle = {
+                        color: brunnel.getMapColor(),
+                        weight: brunnel.getMapWeight(),
+                        opacity: brunnel.getMapOpacity()
+                    };
+                    layer.setStyle(newStyle);
                 }
             } else {
                 // Remove layer from map

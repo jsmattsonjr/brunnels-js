@@ -12,6 +12,7 @@ class Brunnel {
         this.nodes = data.nodes || []; // OSM node IDs for compound detection
         this.routeSpan = null; // Will be set during analysis
         this.exclusionReason = null; // null = included, or reason string
+        this.selected = true; // User selection state for UI (initially true, updated after filtering)
         this.overlapGroup = null; // For handling overlapping brunnels
         this.compoundGroup = null; // Array of Brunnel instances in compound group
     }
@@ -109,6 +110,13 @@ class Brunnel {
         );
         
         return aligned;
+    }
+    
+    /**
+     * Initialize selected state based on exclusionReason (call after filtering)
+     */
+    initializeSelectedState() {
+        this.selected = this.isIncluded();
     }
     
     /**
@@ -259,12 +267,12 @@ class Brunnel {
      * @returns {string} CSS color
      */
     getMapColor() {
-        if (this.exclusionReason) {
-            // Excluded brunnels in muted colors
+        if (!this.selected) {
+            // Unselected brunnels in muted colors
             return this.type === 'bridge' ? '#ffcccb' : '#e6ccff';
         }
         
-        // Included brunnels in bright colors
+        // Selected brunnels in bright colors
         return this.type === 'bridge' ? '#e74c3c' : '#9b59b6';
     }
     
@@ -273,7 +281,7 @@ class Brunnel {
      * @returns {number} Line weight
      */
     getMapWeight() {
-        return this.isIncluded() ? 4 : 2;
+        return this.selected ? 4 : 2;
     }
     
     /**
@@ -281,7 +289,7 @@ class Brunnel {
      * @returns {number} Opacity (0-1)
      */
     getMapOpacity() {
-        return this.isIncluded() ? 0.8 : 0.4;
+        return this.selected ? 0.8 : 0.4;
     }
 }
 

@@ -192,6 +192,9 @@ class BrunnelsApp {
         
         // Handle overlaps
         BrunnelAnalysis.handleOverlaps(this.brunnels, this.route.coordinates);
+        
+        // Initialize selected state for all brunnels based on final exclusionReason
+        this.brunnels.forEach(brunnel => brunnel.initializeSelectedState());
     }
     
     /**
@@ -248,11 +251,11 @@ class BrunnelsApp {
         headerElement.textContent = 'Brunnels Found';
         
         const listHTML = sortedBrunnels.map(brunnel => {
-            const isIncluded = brunnel.isIncluded();
-            const cssClass = `brunnel-item ${brunnel.type} ${isIncluded ? 'included' : 'excluded'}`;
-            const checkboxState = isIncluded ? 'checked' : '';
-            const checkboxLabel = isIncluded ? '✓' : '✗';
-            const labelClass = `checkbox-label${isIncluded ? '' : ' unchecked'}`;
+            const isSelected = brunnel.selected;
+            const cssClass = `brunnel-item ${brunnel.type} ${isSelected ? 'included' : 'excluded'}`;
+            const checkboxState = isSelected ? 'checked' : '';
+            const checkboxLabel = isSelected ? '✓' : '✗';
+            const labelClass = `checkbox-label${isSelected ? '' : ' unchecked'}`;
             
             return `
                 <div class="${cssClass}" data-brunnel-id="${brunnel.id}">
@@ -314,6 +317,12 @@ class BrunnelsApp {
      * @param {boolean} visible - Whether to show (true) or hide (false) the brunnel
      */
     toggleBrunnelVisibility(brunnelId, visible) {
+        // Find the brunnel and update its selected state FIRST
+        const brunnel = this.brunnels.find(b => b.id.toString() === brunnelId.toString());
+        if (brunnel) {
+            brunnel.selected = visible;
+        }
+        
         if (this.mapVisualization) {
             this.mapVisualization.setBrunnelVisibility(brunnelId, visible);
         }
