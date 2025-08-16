@@ -117,12 +117,19 @@ class MapVisualization {
         this.brunnelLayers = [];
         this.brunnelLayerMap.clear();
         
-        // Filter to only show included brunnels
-        const includedBrunnels = brunnels.filter(brunnel => brunnel.isIncluded());
+        // Add all brunnels with route spans (both included and excluded)
+        const brunnelsToAdd = brunnels.filter(brunnel => brunnel.routeSpan !== null);
         
-        // Add each included brunnel
-        for (const brunnel of includedBrunnels) {
+        for (const brunnel of brunnelsToAdd) {
             this.addBrunnel(brunnel);
+            
+            // If brunnel is excluded, hide it initially but keep it in the layer map
+            if (!brunnel.isIncluded()) {
+                const layer = this.brunnelLayerMap.get(brunnel.id.toString());
+                if (layer && this.map.hasLayer(layer)) {
+                    this.map.removeLayer(layer);
+                }
+            }
         }
     }
     
@@ -277,6 +284,11 @@ class MapVisualization {
             const layer = this.brunnelLayerMap.get(targetBrunnel.id.toString());
             if (layer) {
                 if (highlight) {
+                    // Temporarily add excluded brunnels to map for highlighting
+                    if (!this.map.hasLayer(layer)) {
+                        this.map.addLayer(layer);
+                    }
+                    
                     layer.setStyle({
                         weight: 8,
                         opacity: 1.0,
@@ -287,9 +299,14 @@ class MapVisualization {
                     // Reset to original style
                     layer.setStyle({
                         color: targetBrunnel.getMapColor(),
-                        weight: brunnel.getMapWeight(),
-                        opacity: brunnel.getMapOpacity()
+                        weight: targetBrunnel.getMapWeight(),
+                        opacity: targetBrunnel.getMapOpacity()
                     });
+                    
+                    // Remove excluded brunnels from map after highlighting
+                    if (!targetBrunnel.isIncluded()) {
+                        this.map.removeLayer(layer);
+                    }
                 }
             }
         }

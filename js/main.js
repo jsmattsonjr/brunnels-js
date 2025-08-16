@@ -329,6 +329,18 @@ class BrunnelsApp {
                 label.textContent = '✗';
             }
         }
+        
+        // Update sidebar item styling (color bar and opacity)
+        const sidebarItem = document.querySelector(`[data-brunnel-id="${brunnelId}"]`);
+        if (sidebarItem) {
+            if (visible) {
+                sidebarItem.classList.remove('excluded');
+                sidebarItem.classList.add('included');
+            } else {
+                sidebarItem.classList.remove('included');
+                sidebarItem.classList.add('excluded');
+            }
+        }
     }
     
     /**
