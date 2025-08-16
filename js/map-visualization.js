@@ -199,7 +199,6 @@ class MapVisualization {
         }
             
         let content = `<strong>${displayName}</strong><br/>`;
-        content += `Type: ${brunnel.type}<br/>`;
         
         // Show compound brunnel information
         if (brunnel.compoundGroup && brunnel.compoundGroup.length > 1) {
@@ -222,12 +221,13 @@ class MapVisualization {
             content += `<em>Originally excluded (${brunnel.exclusionReason}), user-selected</em><br/>`;
         }
         
-        // Add some OSM tags
-        if (brunnel.tags.highway) {
-            content += `Highway: ${brunnel.tags.highway}<br/>`;
-        }
-        if (brunnel.tags.railway) {
-            content += `Railway: ${brunnel.tags.railway}<br/>`;
+        // Add all OSM tags
+        if (brunnel.tags && Object.keys(brunnel.tags).length > 0) {
+            const sortedTags = Object.keys(brunnel.tags).sort();
+            for (const key of sortedTags) {
+                const value = brunnel.tags[key];
+                content += `${key}: ${value}<br/>`;
+            }
         }
         
         return content;
