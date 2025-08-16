@@ -175,7 +175,13 @@ class MapVisualization {
      * @returns {string} HTML content
      */
     createBrunnelPopup(brunnel) {
-        let content = `<strong>${brunnel.getDisplayName()}</strong><br/>`;
+        // Show individual segment name, not compound group name
+        const capitalizedType = brunnel.type.charAt(0).toUpperCase() + brunnel.type.slice(1);
+        const displayName = brunnel.name && brunnel.name !== brunnel.type 
+            ? `${capitalizedType}: ${brunnel.name}` 
+            : `${capitalizedType}: <OSM ${brunnel.id}>`;
+            
+        let content = `<strong>${displayName}</strong><br/>`;
         content += `Type: ${brunnel.type}<br/>`;
         
         // Show compound brunnel information
@@ -186,7 +192,11 @@ class MapVisualization {
         }
         
         if (brunnel.routeSpan) {
-            content += `Route span: ${brunnel.getRouteSpanString()}<br/>`;
+            // Show individual segment's route span, not compound span
+            const startKm = brunnel.routeSpan.startDistance.toFixed(2);
+            const endKm = brunnel.routeSpan.endDistance.toFixed(2);
+            const lengthKm = (brunnel.routeSpan.endDistance - brunnel.routeSpan.startDistance).toFixed(2);
+            content += `Route span: ${startKm}-${endKm} km (${lengthKm} km)<br/>`;
         }
         
         if (brunnel.exclusionReason) {
