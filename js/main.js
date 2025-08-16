@@ -191,7 +191,7 @@ class BrunnelsApp {
         }
         
         // Handle overlaps
-        BrunnelAnalysis.handleOverlaps(this.brunnels);
+        BrunnelAnalysis.handleOverlaps(this.brunnels, this.route.coordinates);
     }
     
     /**

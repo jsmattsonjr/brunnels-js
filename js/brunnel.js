@@ -446,8 +446,9 @@ class BrunnelAnalysis {
     /**
      * Handle overlapping brunnels - only considers representative brunnels (compound group leaders)
      * @param {Array} brunnels - Array of Brunnel instances
+     * @param {Array} routeCoords - Route coordinates for distance calculation
      */
-    static handleOverlaps(brunnels) {
+    static handleOverlaps(brunnels, routeCoords) {
         const includedBrunnels = brunnels.filter(b => 
             b.isIncluded() && 
             b.routeSpan && 
@@ -486,14 +487,50 @@ class BrunnelAnalysis {
                     brunnel.overlapGroup = group;
                 }
                 
-                // Keep only the first one (simplified - could calculate actual distance)
-                for (let i = 1; i < group.length; i++) {
-                    group[i].exclusionReason = 'alternative';
+                // Calculate average distance to route for each brunnel
+                const brunnelDistances = group.map(brunnel => ({
+                    brunnel,
+                    avgDistance: this._calculateAverageDistanceToRoute(brunnel, routeCoords)
+                }));
+                
+                // Sort by distance (closest first) 
+                brunnelDistances.sort((a, b) => a.avgDistance - b.avgDistance);
+                
+                // Keep the closest, exclude the rest
+                const closestBrunnel = brunnelDistances[0].brunnel;
+                console.log(`Overlap group: keeping closest brunnel ${closestBrunnel.id} (avg distance: ${brunnelDistances[0].avgDistance.toFixed(3)}km)`);
+                
+                for (let i = 1; i < brunnelDistances.length; i++) {
+                    const distancePair = brunnelDistances[i];
+                    distancePair.brunnel.exclusionReason = 'alternative';
+                    console.log(`  Excluding brunnel ${distancePair.brunnel.id} (avg distance: ${distancePair.avgDistance.toFixed(3)}km)`);
                 }
             }
         }
     }
     
+    /**
+     * Calculate average distance from all points in a brunnel to the route
+     * @param {Brunnel} brunnel - Brunnel to calculate distance for
+     * @param {Array} routeCoords - Route coordinates
+     * @returns {number} Average distance in kilometers
+     * @private
+     */
+    static _calculateAverageDistanceToRoute(brunnel, routeCoords) {
+        const routeLine = turf.lineString(routeCoords.map(coord => [coord.lon, coord.lat]));
+        let totalDistance = 0;
+        
+        // Calculate distance from each brunnel point to the route
+        for (const point of brunnel.geometry) {
+            const brunnelPoint = turf.point([point.lon, point.lat]);
+            const nearestPoint = turf.nearestPointOnLine(routeLine, brunnelPoint);
+            const distance = turf.distance(brunnelPoint, nearestPoint, { units: 'kilometers' });
+            totalDistance += distance;
+        }
+        
+        return totalDistance / brunnel.geometry.length;
+    }
+
     /**
      * Check if two route spans overlap
      * @param {Object} span1 - First route span
