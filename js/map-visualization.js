@@ -217,21 +217,6 @@ class MapVisualization {
         return content;
     }
     
-    /**
-     * Create custom icon for markers
-     * @param {string} emoji - Emoji character
-     * @param {string} color - Background color
-     * @returns {Object} Leaflet icon
-     */
-    createCustomIcon(emoji, color) {
-        return L.divIcon({
-            html: `<div style="background: ${color}; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; font-size: 16px; border: 2px solid white;">${emoji}</div>`,
-            iconSize: [30, 30],
-            iconAnchor: [15, 15],
-            popupAnchor: [0, -15],
-            className: 'custom-marker'
-        });
-    }
     
     /**
      * Update map with new data

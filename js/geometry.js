@@ -184,10 +184,9 @@ class GeometryUtils {
      * Calculate route spans where brunnel projects onto the route using Turf.js (WGS84)
      * @param {Array} brunnelCoords - Brunnel coordinates
      * @param {Array} routeCoords - Route coordinates
-     * @param {number} bufferMeters - Buffer distance in meters (not used in route span calculation)
      * @returns {Object|null} Route span {startDistance, endDistance} or null
      */
-    static calculateRouteSpan(brunnelCoords, routeCoords, bufferMeters) {
+    static calculateRouteSpan(brunnelCoords, routeCoords) {
         try {
             // Create route line using WGS84 coordinates - let Turf handle projections internally
             const routeLine = turf.lineString(routeCoords.map(coord => [coord.lon, coord.lat]));
@@ -242,7 +241,6 @@ class GeometryUtils {
         }
         
         let minBearingDiff = Infinity;
-        let alignedSegments = [];
         
         // Check each brunnel segment against each route substring segment using rhumb bearings
         for (let i = 0; i < brunnelCoords.length - 1; i++) {
@@ -291,15 +289,6 @@ class GeometryUtils {
         return diff;
     }
     
-    /**
-     * Calculate total distance of route using Turf
-     */
-    static calculateRouteDistance(routeCoords) {
-        const lineString = turf.lineString(
-            routeCoords.map(coord => [coord.lon, coord.lat])
-        );
-        return turf.length(lineString, { units: 'meters' });
-    }
     
     /**
      * Calculate bounds of coordinates using Turf

@@ -84,8 +84,7 @@ class Brunnel {
     calculateRouteSpan(routeCoords, bufferMeters) {
         this.routeSpan = GeometryUtils.calculateRouteSpan(
             this.geometry, 
-            routeCoords, 
-            bufferMeters
+            routeCoords
         );
         
     }
@@ -568,23 +567,4 @@ class BrunnelAnalysis {
         return !(span1.endDistance <= span2.startDistance || span2.endDistance <= span1.startDistance);
     }
     
-    /**
-     * Get summary statistics
-     * @param {Array} brunnels - Array of Brunnel instances
-     * @returns {Object} Summary stats
-     */
-    static getSummaryStats(brunnels) {
-        const bridges = brunnels.filter(b => b.type === 'bridge');
-        const tunnels = brunnels.filter(b => b.type === 'tunnel');
-        
-        
-        return {
-            totalBrunnels: brunnels.length,
-            totalBridges: bridges.length,
-            totalTunnels: tunnels.length,
-            includedBridges: bridges.filter(b => b.isIncluded()).length,
-            includedTunnels: tunnels.filter(b => b.isIncluded()).length,
-            excludedCount: brunnels.filter(b => !b.isIncluded()).length
-        };
-    }
 }

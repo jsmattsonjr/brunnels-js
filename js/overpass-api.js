@@ -141,18 +141,6 @@ out geom qt;`;
         return brunnels;
     }
     
-    /**
-     * Determine if element is a bridge or tunnel
-     */
-    static determineBrunnelType(tags) {
-        if (tags.bridge && tags.bridge !== 'no') {
-            return 'bridge';
-        }
-        if (tags.tunnel && tags.tunnel !== 'no') {
-            return 'tunnel';
-        }
-        return null;
-    }
     
     /**
      * Extract human-readable name from OSM tags
@@ -177,24 +165,4 @@ out geom qt;`;
         return type;
     }
     
-    /**
-     * Expand bounding box by buffer distance
-     * @param {Object} bounds - Original bounds
-     * @param {number} bufferMeters - Buffer distance in meters
-     * @returns {Object} Expanded bounds
-     */
-    static expandBounds(bounds, bufferMeters) {
-        // Approximate conversion: 1 degree ≈ 111,320 meters at equator
-        // This is a rough approximation, but sufficient for query purposes
-        const latBuffer = bufferMeters / 111320;
-        const lonBuffer = bufferMeters / (111320 * Math.cos(bounds.center.lat * Math.PI / 180));
-        
-        return {
-            minLat: bounds.minLat - latBuffer,
-            maxLat: bounds.maxLat + latBuffer,
-            minLon: bounds.minLon - lonBuffer,
-            maxLon: bounds.maxLon + lonBuffer,
-            center: bounds.center
-        };
-    }
 }
