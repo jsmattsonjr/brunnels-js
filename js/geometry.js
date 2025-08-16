@@ -102,6 +102,14 @@ class GeometryUtils {
      * @returns {boolean} True if brunnel is completely within (matches Python shapely.contains)
      */
     static brunnelWithin(brunnelCoords, routeBuffer) {
+        // Check if all brunnel points are inside the route buffer
+        for (const coord of brunnelCoords) {
+            const point = turf.point([coord.lon, coord.lat]);
+            if (!turf.booleanPointInPolygon(point, routeBuffer)) {
+                return false;
+            }
+        }
+        
         // Create brunnel LineString geometry
         const brunnelLine = turf.lineString(brunnelCoords.map(coord => [coord.lon, coord.lat]));
         
@@ -112,13 +120,7 @@ class GeometryUtils {
         const intersections = turf.lineIntersect(brunnelLine, polygonBoundary);
         
         // If there are intersections with the boundary, the line is not fully contained
-        if (intersections.features.length > 0) {
-            return false;
-        }
-        
-        // If no boundary intersections, check if the first point is inside
-        const firstPoint = turf.point([brunnelCoords[0].lon, brunnelCoords[0].lat]);
-        return turf.booleanPointInPolygon(firstPoint, routeBuffer);
+        return intersections.features.length === 0;
     }
     
     
