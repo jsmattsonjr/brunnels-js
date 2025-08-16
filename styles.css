@@ -120,7 +120,7 @@ body {
     transform: translateY(-1px);
 }
 
-.advanced-options-panel:hover .advanced-options-button {
+.advanced-options-panel.open .advanced-options-button {
     opacity: 0;
     visibility: hidden;
 }
@@ -143,7 +143,7 @@ body {
     width: 280px;
 }
 
-.advanced-options-panel:hover .advanced-options-dropdown {
+.advanced-options-panel.open .advanced-options-dropdown {
     opacity: 1;
     visibility: visible;
     transform: translateX(-50%);

@@ -15,6 +15,8 @@ class BrunnelsApp {
     initializeEventListeners() {
         const gpxFileInput = document.getElementById('gpxFile');
         const errorBackBtn = document.getElementById('errorBackBtn');
+        const advancedOptionsButton = document.querySelector('.advanced-options-button');
+        const advancedOptionsPanel = document.querySelector('.advanced-options-panel');
         
         // File selection automatically starts analysis
         gpxFileInput.addEventListener('change', (event) => {
@@ -28,6 +30,20 @@ class BrunnelsApp {
         errorBackBtn.addEventListener('click', () => {
             this.showUploadScreen();
         });
+        
+        // Advanced options toggle
+        if (advancedOptionsButton && advancedOptionsPanel) {
+            advancedOptionsButton.addEventListener('click', () => {
+                advancedOptionsPanel.classList.toggle('open');
+            });
+            
+            // Close when clicking outside
+            document.addEventListener('click', (event) => {
+                if (!advancedOptionsPanel.contains(event.target)) {
+                    advancedOptionsPanel.classList.remove('open');
+                }
+            });
+        }
     }
     
     /**
