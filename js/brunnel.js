@@ -15,6 +15,7 @@ class Brunnel {
         this.selected = true; // User selection state for UI (initially true, updated after filtering)
         this.overlapGroup = null; // For handling overlapping brunnels
         this.compoundGroup = null; // Array of Brunnel instances in compound group
+        this.displayName = this.name || this.extractNameFromTags(this.tags, this.type);
     }
     
     /**
@@ -154,39 +155,16 @@ class Brunnel {
      */
     getDisplayName() {
         if (this.compoundGroup && this.compoundGroup.length > 1) {
-            // For compound brunnels, combine unique names
+            // For compound brunnels, combine unique display names
             const names = this.compoundGroup
-                .map(b => b.name)
-                .filter(name => name && name !== this.type && name !== 'Bridge' && name !== 'Tunnel')
+                .map(b => b.displayName)
                 .filter((name, index, arr) => arr.indexOf(name) === index); // unique names
                 
-            if (names.length > 0) {
-                return `${names.join(', ')} (${this.getCompoundId()})`;
-            }
-            
-            // If no meaningful names, extract from tags or use generic name
-            const firstBrunnel = this.compoundGroup[0];
-            const extractedName = this.extractNameFromTags(firstBrunnel.tags, firstBrunnel.type);
-            return `${extractedName} (${this.getCompoundId()})`;
+            return `${names.join(', ')} (${this.getCompoundId()})`;
         }
         
         // Single brunnel display
-        let displayName;
-        if (this.name && this.name !== this.type && this.name !== 'Bridge' && this.name !== 'Tunnel') {
-            // Check if name is a generated name like "Bridge (footway)" or "Tunnel (cycleway)"
-            const generatedNamePattern = /^(Bridge|Tunnel) \(([^)]+)\)$/;
-            const match = this.name.match(generatedNamePattern);
-            if (match) {
-                // Extract the tag value and capitalize it
-                displayName = match[2].charAt(0).toUpperCase() + match[2].slice(1);
-            } else {
-                displayName = this.name;
-            }
-        } else {
-            displayName = this.extractNameFromTags(this.tags, this.type);
-        }
-        
-        return `${displayName} (${this.id})`;
+        return `${this.displayName} (${this.id})`;
     }
     
     /**

@@ -180,24 +180,8 @@ class MapVisualization {
      * @returns {string} HTML content
      */
     createBrunnelPopup(brunnel) {
-        // Get individual segment display name (with OSM ID already included)
-        let displayName;
-        if (brunnel.name && brunnel.name !== brunnel.type && brunnel.name !== 'Bridge' && brunnel.name !== 'Tunnel') {
-            // Check if name is a generated name like "Bridge (footway)" or "Tunnel (cycleway)"
-            const generatedNamePattern = /^(Bridge|Tunnel) \(([^)]+)\)$/;
-            const match = brunnel.name.match(generatedNamePattern);
-            if (match) {
-                // Extract the tag value and capitalize it
-                const tagName = match[2].charAt(0).toUpperCase() + match[2].slice(1);
-                displayName = `${tagName} (${brunnel.id})`;
-            } else {
-                displayName = `${brunnel.name} (${brunnel.id})`;
-            }
-        } else {
-            const extractedName = brunnel.extractNameFromTags(brunnel.tags, brunnel.type);
-            displayName = `${extractedName} (${brunnel.id})`;
-        }
-            
+        // Use display name with OSM ID for individual segments
+        const displayName = `${brunnel.displayName} (${brunnel.id})`;
         let content = `<strong>${displayName}</strong><br/>`;
         
         // Show compound brunnel information
