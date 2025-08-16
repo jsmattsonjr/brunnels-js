@@ -6,6 +6,9 @@
   "scripts": {
     "start": "python3 -m http.server 8000",
     "dev": "python3 -m http.server 8000",
+    "proxy": "node proxy-server.js",
+    "proxy:clean": "node proxy-server.js --clean",
+    "dev:full": "concurrently \"npm run proxy\" \"npm run dev\"",
     "test": "echo 'Open http://localhost:8000/tests/test-runner.html to run tests' && npm start",
     "test:open": "open http://localhost:8000/tests/test-runner.html && npm start"
   },
@@ -13,5 +16,7 @@
   "author": "JavaScript port of Python brunnels tool",
   "license": "MIT",
   "dependencies": {},
-  "devDependencies": {}
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
 }

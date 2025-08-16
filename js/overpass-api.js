@@ -3,6 +3,38 @@
  */
 class OverpassAPI {
     static OVERPASS_URL = 'https://overpass-api.de/api/interpreter';
+    static PROXY_URL = 'http://localhost:3001/api/interpreter';
+    
+    /**
+     * Check if the local caching proxy is available
+     * @returns {Promise<boolean>} True if proxy is available
+     */
+    static async isProxyAvailable() {
+        try {
+            const response = await fetch(this.PROXY_URL, {
+                method: 'OPTIONS',
+                mode: 'cors'
+            });
+            return response.ok;
+        } catch (error) {
+            return false;
+        }
+    }
+    
+    /**
+     * Get the appropriate endpoint URL (proxy if available, otherwise direct)
+     * @returns {Promise<string>} URL to use for requests
+     */
+    static async getEndpointUrl() {
+        const proxyAvailable = await this.isProxyAvailable();
+        if (proxyAvailable) {
+            console.log('✓ Using local caching proxy for Overpass API requests');
+            return this.PROXY_URL;
+        } else {
+            console.log('⚠ Local proxy not available, using direct Overpass API (may hit rate limits)');
+            return this.OVERPASS_URL;
+        }
+    }
     
     /**
      * Query bridges and tunnels near a route
@@ -26,7 +58,8 @@ class OverpassAPI {
         });
         
         try {
-            const response = await fetch(this.OVERPASS_URL, {
+            const endpointUrl = await this.getEndpointUrl();
+            const response = await fetch(endpointUrl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',

@@ -8,15 +8,35 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ```bash
 npm start                   # Start local HTTP server on port 8000
 npm run dev                 # Alternative dev command (same as start)
+npm run proxy               # Start Overpass API caching proxy on port 3001
+npm run dev:full            # Start both web server and proxy concurrently
 python3 -m http.server 8000 # Direct Python server command
 ```
 
-The application requires a local server due to browser CORS restrictions for file uploads. Always start the server before testing GPX file analysis.
+The application requires a local server due to browser CORS restrictions for file uploads. 
+
+**Recommended**: Use `npm run dev:full` to start both the web server and the Overpass API caching proxy. The proxy helps avoid 429 rate limit errors from the Overpass API by caching responses locally.
+
+### Overpass API Caching Proxy
+```bash
+npm run proxy               # Start proxy server on port 3001
+npm run proxy:clean         # Clean expired cache entries
+node proxy-server.js --help # Show all proxy options
+```
+
+The caching proxy:
+- Caches Overpass API responses locally for 24 hours by default
+- Automatically detects and uses the proxy when available
+- Falls back to direct API calls if proxy is not running
+- Stores cache in `.overpass-cache/` directory
+- Helps avoid 429 rate limit errors during development and testing
 
 ### Testing the Application
-1. Start the server: `npm start`
+1. Start both servers: `npm run dev:full` (or `npm run proxy` and `npm start` separately)
 2. Open `http://localhost:8000` in browser
 3. Upload a GPX file and test analysis functionality
+
+**Note**: The proxy server significantly improves performance by caching Overpass API responses and helps avoid rate limiting during testing.
 
 ### Running Tests
 ```bash

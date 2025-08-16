@@ -1,2 +1,11 @@
 # Reference Python implementation (not part of JS port)
 reference/
+
+# Overpass API cache directory
+.overpass-cache/
+
+# Node modules and npm
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
