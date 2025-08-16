@@ -100,7 +100,6 @@ class Brunnel {
             return true;
         }
         
-        console.log(`Checking alignment for ${this.getDisplayName()}`);
         const aligned = GeometryUtils.isBrunnelAligned(
             this.geometry,
             routeCoords,
