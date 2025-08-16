@@ -8,22 +8,34 @@ A web-based JavaScript port of the Python [Brunnels](reference/brunnels) tool fo
 - **Real-time Analysis**: Interactive map showing your route with bridges and tunnels
 - **Smart Filtering**: Excludes irrelevant infrastructure based on cycling criteria and route alignment
 - **Interactive Map**: Click on brunnels for detailed OpenStreetMap metadata
-- **Detailed Results**: Summary statistics and comprehensive brunnel list
+- **Caching Proxy**: Local Overpass API cache to avoid rate limits and improve performance
+- **Performance Optimizations**: Efficient intersection testing and route chunking for long routes
+- **Advanced Options**: Configurable search and filtering parameters
+- **Compound Brunnel Detection**: Identifies and visualizes complex bridge/tunnel structures
+- **Detailed Results**: Summary statistics and comprehensive brunnel list with distance reporting
 
 ## Quick Start
 
-1. **Start a local server** (required for file uploads):
+1. **Start the development environment** (recommended):
    ```bash
    cd brunnels-js
+   npm run dev:full
+   ```
+   This starts both the web server (port 8000) and the Overpass API caching proxy (port 3001).
+
+2. **Alternative - Basic server only**:
+   ```bash
    npm start
    # or: python3 -m http.server 8000
    ```
 
-2. **Open in browser**: Navigate to `http://localhost:8000`
+3. **Open in browser**: Navigate to `http://localhost:8000`
 
-3. **Upload GPX file**: Click "Choose GPX File" and select your route
+4. **Upload GPX file**: Click "Choose GPX File" and select your route
 
-4. **Analyze**: Click "Analyze Route" to find bridges and tunnels
+5. **Configure options** (optional): Click the gear icon to adjust search parameters
+
+6. **Analyze**: Click "Analyze Route" to find bridges and tunnels
 
 ## Libraries Used
 
@@ -33,7 +45,7 @@ This port uses modern JavaScript libraries equivalent to the Python dependencies
 - **Geospatial Operations**: `@turf/turf` (equivalent to `shapely`)
 - **Map Visualization**: `leaflet` (equivalent to `folium`) 
 - **Binary Search**: `lodash` (equivalent to Python's `bisect`)
-- **Projections**: Handled internally by Turf.js
+- **Coordinate Projections**: Handled internally by Turf.js
 - **HTTP Requests**: `fetch` (equivalent to `requests`)
 
 ## Options
@@ -64,6 +76,13 @@ Requires a modern browser with support for:
 - ES6+ JavaScript features
 - Fetch API
 - File API for GPX uploads
+
+## Performance Features
+
+- **Caching Proxy Server**: Automatically caches Overpass API responses for 24 hours to avoid rate limits
+- **Optimized Intersection Testing**: Efficient point-in-polygon checking before expensive intersection operations
+- **Route Chunking**: Handles long routes by breaking them into manageable segments
+- **Smart Overlap Resolution**: Selects the closest brunnel to the route when multiple brunnels overlap
 
 ## Development
 
