@@ -64,17 +64,6 @@ class Brunnel {
         return isWithin;
     }
     
-    /**
-     * Debug containment for this brunnel
-     * @param {Array} routeCoords - Route coordinates
-     */
-    debugContainment(routeCoords) {
-        if (typeof GeometryUtils === 'undefined') {
-            console.error('GeometryUtils not available for debugging');
-            return;
-        }
-        return GeometryUtils.debugBrunnelContainment(this.geometry, routeCoords, this.getDisplayName());
-    }
     
     /**
      * Calculate route span where this brunnel intersects the route
@@ -293,11 +282,6 @@ class BrunnelAnalysis {
             const isWithin = brunnel.isWithin(routeBuffer);
             if (!isWithin) {
                 brunnel.exclusionReason = 'outlier';
-            } else {
-                // Debug the specific tunnel that should not be included
-                if (brunnel.name && brunnel.name.includes('Túnel de Valdealgorfa')) {
-                    brunnel.debugContainment(routeCoords);
-                }
             }
             return isWithin;
         });
