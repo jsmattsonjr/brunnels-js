@@ -159,10 +159,34 @@ class BrunnelsApp {
             },
             async findBrunnels(options) {
                 const queryBuffer = options.queryBuffer || 10;
-                console.log('Base route bounding box:', bounds);
-                const expandedBounds = GeometryUtils.expandBounds(bounds, queryBuffer);
-                console.log(`Expanded bounds with ${queryBuffer}m buffer:`, expandedBounds);
-                return await OverpassAPI.queryBrunnels(expandedBounds, options);
+                
+                // Check if route is long enough to need chunking
+                const routeLengthKm = totalDistance / 1000.0;
+                
+                if (routeLengthKm <= 500.0) {
+                    // Short route - use single query
+                    console.log('Base route bounding box:', bounds);
+                    const expandedBounds = GeometryUtils.expandBounds(bounds, queryBuffer);
+                    console.log(`Expanded bounds with ${queryBuffer}m buffer:`, expandedBounds);
+                    
+                    // Calculate and log query area before API call
+                    const latDiff = expandedBounds.maxLat - expandedBounds.minLat;
+                    const lonDiff = expandedBounds.maxLon - expandedBounds.minLon;
+                    const avgLat = (expandedBounds.maxLat + expandedBounds.minLat) / 2;
+                    const latKm = latDiff * 111.0;
+                    const lonKm = lonDiff * 111.0 * Math.abs(Math.cos(avgLat * Math.PI / 180));
+                    const areaSqKm = latKm * lonKm;
+                    
+                    console.log(
+                        `Querying Overpass API for bridges and tunnels in ` +
+                        `${areaSqKm.toFixed(1)} sq km area...`
+                    );
+                    
+                    return await OverpassAPI.queryBrunnels(expandedBounds, options);
+                } else {
+                    // Long route - use chunked queries
+                    return await OverpassAPI.queryBrunnelsChunked(coordinates, options);
+                }
             }
         };
     }
