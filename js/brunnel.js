@@ -145,28 +145,61 @@ class Brunnel {
      * @returns {string} Display name
      */
     getDisplayName() {
-        const capitalizedType = this.type.charAt(0).toUpperCase() + this.type.slice(1);
-        
         if (this.compoundGroup && this.compoundGroup.length > 1) {
             // For compound brunnels, combine unique names
             const names = this.compoundGroup
                 .map(b => b.name)
-                .filter(name => name && name !== this.type)
+                .filter(name => name && name !== this.type && name !== 'Bridge' && name !== 'Tunnel')
                 .filter((name, index, arr) => arr.indexOf(name) === index); // unique names
                 
             if (names.length > 0) {
-                return `${capitalizedType}: ${names.join(', ')}`;
+                return `${names.join(', ')} (${this.getCompoundId()})`;
             }
             
-            // If no meaningful names, show compound ID
-            return `${capitalizedType}: <OSM ${this.getCompoundId()}>`;
+            // If no meaningful names, extract from tags or use generic name
+            const firstBrunnel = this.compoundGroup[0];
+            const extractedName = this.extractNameFromTags(firstBrunnel.tags, firstBrunnel.type);
+            return `${extractedName} (${this.getCompoundId()})`;
         }
         
         // Single brunnel display
-        if (this.name && this.name !== this.type) {
-            return `${capitalizedType}: ${this.name}`;
+        let displayName;
+        if (this.name && this.name !== this.type && this.name !== 'Bridge' && this.name !== 'Tunnel') {
+            // Check if name is a generated name like "Bridge (footway)" or "Tunnel (cycleway)"
+            const generatedNamePattern = /^(Bridge|Tunnel) \(([^)]+)\)$/;
+            const match = this.name.match(generatedNamePattern);
+            if (match) {
+                // Extract the tag value and capitalize it
+                displayName = match[2].charAt(0).toUpperCase() + match[2].slice(1);
+            } else {
+                displayName = this.name;
+            }
+        } else {
+            displayName = this.extractNameFromTags(this.tags, this.type);
         }
-        return `${capitalizedType}: <OSM ${this.id}>`;
+        
+        return `${displayName} (${this.id})`;
+    }
+    
+    /**
+     * Extract a meaningful name from OSM tags for display
+     * @param {Object} tags - OSM tags
+     * @param {string} type - brunnel type ('bridge' or 'tunnel')
+     * @returns {string} Display name
+     */
+    extractNameFromTags(tags, type) {
+        // Check for highway tag and capitalize it
+        if (tags.highway) {
+            return tags.highway.charAt(0).toUpperCase() + tags.highway.slice(1);
+        }
+        
+        // Check for railway tag and capitalize it
+        if (tags.railway) {
+            return tags.railway.charAt(0).toUpperCase() + tags.railway.slice(1);
+        }
+        
+        // Fallback to generic type name
+        return type.charAt(0).toUpperCase() + type.slice(1);
     }
 
     /**
