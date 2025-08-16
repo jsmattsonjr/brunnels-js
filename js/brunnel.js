@@ -508,12 +508,12 @@ class BrunnelAnalysis {
                 
                 // Keep the closest, exclude the rest
                 const closestBrunnel = brunnelDistances[0].brunnel;
-                console.log(`Overlap group: keeping closest brunnel ${closestBrunnel.id} (avg distance: ${brunnelDistances[0].avgDistance.toFixed(3)}km)`);
+                console.log(`Overlap group: keeping closest brunnel ${closestBrunnel.id} (avg distance: ${brunnelDistances[0].avgDistance.toFixed(3)}m)`);
                 
                 for (let i = 1; i < brunnelDistances.length; i++) {
                     const distancePair = brunnelDistances[i];
                     distancePair.brunnel.exclusionReason = 'alternative';
-                    console.log(`  Excluding brunnel ${distancePair.brunnel.id} (avg distance: ${distancePair.avgDistance.toFixed(3)}km)`);
+                    console.log(`  Excluding brunnel ${distancePair.brunnel.id} (avg distance: ${distancePair.avgDistance.toFixed(3)}m)`);
                 }
             }
         }
@@ -523,7 +523,7 @@ class BrunnelAnalysis {
      * Calculate average distance from all points in a brunnel to the route
      * @param {Brunnel} brunnel - Brunnel to calculate distance for
      * @param {Array} routeCoords - Route coordinates
-     * @returns {number} Average distance in kilometers
+     * @returns {number} Average distance in meters
      * @private
      */
     static _calculateAverageDistanceToRoute(brunnel, routeCoords) {
@@ -534,7 +534,7 @@ class BrunnelAnalysis {
         for (const point of brunnel.geometry) {
             const brunnelPoint = turf.point([point.lon, point.lat]);
             const nearestPoint = turf.nearestPointOnLine(routeLine, brunnelPoint);
-            const distance = turf.distance(brunnelPoint, nearestPoint, { units: 'kilometers' });
+            const distance = turf.distance(brunnelPoint, nearestPoint, { units: 'meters' });
             totalDistance += distance;
         }
         
