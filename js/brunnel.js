@@ -168,6 +168,15 @@ class Brunnel {
     }
     
     /**
+     * Capitalize the first letter of a string
+     * @param {string} str - String to capitalize
+     * @returns {string} String with first letter capitalized
+     */
+    static initialCap(str) {
+        return str.charAt(0).toUpperCase() + str.slice(1);
+    }
+
+    /**
      * Extract a meaningful name from OSM tags for display
      * @param {Object} tags - OSM tags
      * @param {string} type - brunnel type ('bridge' or 'tunnel')
@@ -176,16 +185,16 @@ class Brunnel {
     extractNameFromTags(tags, type) {
         // Check for highway tag and capitalize it
         if (tags.highway) {
-            return tags.highway.charAt(0).toUpperCase() + tags.highway.slice(1);
+            return Brunnel.initialCap(tags.highway);
         }
         
         // Check for railway tag and capitalize it
         if (tags.railway) {
-            return tags.railway.charAt(0).toUpperCase() + tags.railway.slice(1);
+            return Brunnel.initialCap(tags.railway);
         }
         
         // Fallback to generic type name
-        return type.charAt(0).toUpperCase() + type.slice(1);
+        return Brunnel.initialCap(type);
     }
 
     /**
