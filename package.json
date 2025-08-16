@@ -1,6 +1,6 @@
 {
   "name": "brunnels-js",
-  "version": "1.0.0",
+  "version": "0.9.0",
   "description": "Web-based GPX route analysis tool that identifies bridges and tunnels along your route",
   "main": "index.html",
   "scripts": {
