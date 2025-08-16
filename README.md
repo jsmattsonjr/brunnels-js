@@ -16,26 +16,31 @@ A web-based JavaScript port of the Python [Brunnels](reference/brunnels) tool fo
 
 ## Quick Start
 
-1. **Start the development environment** (recommended):
+1. **Install dependencies**:
    ```bash
    cd brunnels-js
+   npm install
+   ```
+
+2. **Start the development environment** (recommended):
+   ```bash
    npm run dev:full
    ```
    This starts both the web server (port 8000) and the Overpass API caching proxy (port 3001).
 
-2. **Alternative - Basic server only**:
+3. **Alternative - Basic server only**:
    ```bash
    npm start
    # or: python3 -m http.server 8000
    ```
 
-3. **Open in browser**: Navigate to `http://localhost:8000`
+4. **Open in browser**: Navigate to `http://localhost:8000`
 
-4. **Upload GPX file**: Click "Choose GPX File" and select your route
+5. **Upload GPX file**: Click "Choose GPX File" and select your route
 
-5. **Configure options** (optional): Click the gear icon to adjust search parameters
+6. **Configure options** (optional): Click the gear icon to adjust search parameters
 
-6. **Analyze**: Click "Analyze Route" to find bridges and tunnels
+7. **Analyze**: Click "Analyze Route" to find bridges and tunnels
 
 ## Libraries Used
 

@@ -12,10 +12,16 @@
     "test": "echo 'Open http://localhost:8000/tests/test-runner.html to run tests' && npm start",
     "test:open": "open http://localhost:8000/tests/test-runner.html && npm start"
   },
-  "keywords": ["gpx", "bridges", "tunnels", "cycling", "route", "openstreetmap"],
+  "keywords": [
+    "gpx",
+    "bridges",
+    "tunnels",
+    "cycling",
+    "route",
+    "openstreetmap"
+  ],
   "author": "JavaScript port of Python brunnels tool",
   "license": "MIT",
-  "dependencies": {},
   "devDependencies": {
     "concurrently": "^8.2.2"
   }
